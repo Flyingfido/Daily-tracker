@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Daily Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0E0F11;
+  --surface: #16181C;
+  --surface2: #1E2128;
+  --surface3: #262A33;
+  --border: #2E3340;
+  --text: #F0F0EE;
+  --text-mid: #9A9DA8;
+  --text-dim: #5A5E6B;
+  --accent: #C8F060;   /* sharp lime */
+  --accent2: #60C8F0;  /* sky blue */
+  --accent3: #F0A060;  /* warm amber */
+  --accent4: #F06080;  /* rose */
+  --danger: #F06060;
+  --radius: 12px;
+  --radius-sm: 7px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 100px;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(14,15,17,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 1.25rem;
+  height: 56px; gap: 0;
+}
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 1rem;
+  color: var(--accent); letter-spacing: -0.01em;
+  margin-right: auto;
+}
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab {
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: none; background: transparent;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.78rem; font-weight: 500;
+  color: var(--text-mid); cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: var(--text); background: var(--surface2); }
+.nav-tab.active { background: var(--surface3); color: var(--text); }
+
+/* ── VIEWS ── */
+.view { display: none; max-width: 900px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+.view.active { display: block; }
+
+/* ── HEADER BLOCK ── */
+.day-header {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;
+}
+.day-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 800; line-height: 1; letter-spacing: -0.03em;
+}
+.day-title span { color: var(--accent); }
+.day-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.3rem; }
+.day-nav { display: flex; gap: 0.4rem; align-items: center; }
+.day-nav button {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-mid); cursor: pointer; font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.day-nav button:hover { background: var(--surface2); color: var(--text); }
+.day-nav .today-btn {
+  width: auto; border-radius: 20px; padding: 0 0.7rem;
+  font-family: 'Instrument Sans', sans-serif; font-size: 0.72rem;
+}
+
+/* ── SECTION CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.card-header {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+.card-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; flex-shrink: 0;
+}
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 0.88rem;
+  letter-spacing: 0.03em; text-transform: uppercase;
+}
+.card-subtitle { font-size: 0.72rem; color: var(--text-dim); margin-left: auto; }
+
+/* ── PROGRESS ROW ── */
+.progress-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.75rem; color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+.progress-track {
+  flex: 1; height: 4px; background: var(--surface3);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+/* ── CHECKBOX ITEMS ── */
+.check-list { display: flex; flex-direction: column; gap: 0.45rem; }
+.check-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+  user-select: none;
+}
+.check-item:hover { background: var(--surface2); }
+.check-item.done { opacity: 0.6; }
+.check-item.done .check-label { text-decoration: line-through; color: var(--text-dim); }
+.check-box {
+  width: 20px; height: 20px; border-radius: 5px;
+  border: 2px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.15s;
+  font-size: 0.7rem;
+}
+.check-item.done .check-box {
+  background: var(--accent); border-color: var(--accent); color: #111;
+}
+.check-label { font-size: 0.85rem; }
+.check-target { font-size: 0.7rem; color: var(--text-dim); margin-left: auto; white-space: nowrap; }
+
+/* ── FREQUENCY DOTS ── */
+.freq-dots { display: flex; gap: 4px; margin-left: auto; }
+.freq-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--surface3); border: 1px solid var(--border);
+  cursor: pointer; transition: background 0.15s;
+}
+.freq-dot.filled { background: var(--accent); border-color: var(--accent); }
+
+/* ── STRENGTH LIFT ROWS ── */
+.lift-section { margin-bottom: 0.5rem; }
+.lift-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0.4rem;
+  cursor: pointer;
+}
+.lift-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 0.82rem;
+  letter-spacing: 0.02em; flex: 1;
+}
+.pb-badge {
+  font-size: 0.65rem; background: var(--accent);
+  color: #111; padding: 1px 6px; border-radius: 20px;
+  font-weight: 700; opacity: 0; transition: opacity 0.3s;
+}
+.pb-badge.show { opacity: 1; }
+.lift-sets { display: flex; flex-direction: column; gap: 0.4rem; padding: 0 0.5rem 0.5rem; }
+.set-row {
+  display: grid; grid-template-columns: 28px 1fr 1fr 28px;
+  gap: 0.4rem; align-items: center;
+}
+.set-num { font-size: 0.7rem; color: var(--text-dim); text-align: center; }
+.set-input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.4rem 0.5rem;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.82rem; color: var(--text);
+  outline: none; width: 100%; text-align: center;
+  transition: border-color 0.15s;
+}
+.set-input:focus { border-color: var(--accent2); }
+.set-input::placeholder { color: var(--text-dim); }
+.set-del {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-dim); cursor: pointer; font-size: 0.7rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.set-del:hover { border-color: var(--danger); color: var(--danger); }
+.add-set-btn {
+  margin-top: 0.3rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-dim);
+  font-size: 0.75rem; cursor: pointer; transition: all 0.15s;
+  font-family: 'Instrument Sans', sans-serif; width: 100%;
+}
+.add-set-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+.set-header {
+  display: grid; grid-template-columns: 28px 1fr 1fr 28px;
+  gap: 0.4rem; padding: 0 0.5rem;
+  font-size: 0.65rem; color: var(--text-dim);
+  text-align: center; margin-bottom: 0.2rem;
+}
+
+/* ── SLIDERS ── */
+.slider-list { display: flex; flex-direction: column; gap: 0.9rem; }
+.slider-item {}
+.slider-top {
+  display: flex; justify-content: space-between;
+  align-items: baseline; margin-bottom: 0.4rem;
+}
+.slider-label { font-size: 0.83rem; }
+.slider-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--accent); min-width: 24px; text-align: right;
+}
+input[type=range] {
+  -webkit-appearance: none; width: 100%; height: 4px;
+  background: var(--surface3); border-radius: 2px; outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(200,240,96,0.15);
+  transition: box-shadow 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 6px rgba(200,240,96,0.2);
+}
+
+/* ── VEG INPUT ── */
+.veg-input-wrap {
+  display: flex; gap: 0.5rem; margin-bottom: 0.75rem;
+}
+.veg-input-wrap input {
+  flex: 1;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0.5rem 0.75rem;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem; color: var(--text); outline: none;
+  transition: border-color 0.15s;
+}
+.veg-input-wrap input:focus { border-color: var(--accent); }
+.veg-input-wrap input::placeholder { color: var(--text-dim); }
+.add-btn {
+  padding: 0.5rem 1rem;
+  background: var(--accent); border: none;
+  border-radius: var(--radius-sm); color: #111;
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 0.82rem; cursor: pointer; transition: opacity 0.15s;
+}
+.add-btn:hover { opacity: 0.85; }
+.veg-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.veg-tag {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.6rem; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 500;
+}
+.veg-tag button {
+  background: none; border: none; cursor: pointer;
+  color: inherit; opacity: 0.6; font-size: 0.7rem; padding: 0;
+  line-height: 1;
+}
+.veg-tag button:hover { opacity: 1; }
+
+/* Veg family colours */
+.vf-leafy      { background: #1e3a2a; color: #6fcf97; }
+.vf-cruciferous{ background: #2a3a1e; color: #a8d86e; }
+.vf-root       { background: #3a2a1e; color: #f4a261; }
+.vf-allium     { background: #3a1e3a; color: #d8a8f0; }
+.vf-legume     { background: #1e2a3a; color: #6ec6f4; }
+.vf-cucurbit   { background: #1e3a3a; color: #6ef4d8; }
+.vf-nightshade { background: #3a1e1e; color: #f46e6e; }
+.vf-other      { background: #2a2a2a; color: #b0b0b0; }
+
+/* ── WEEK STRIP ── */
+.week-strip {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem; margin-bottom: 1.5rem;
+}
+.week-day {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.3rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.week-day:hover { border-color: var(--text-dim); }
+.week-day.today { border-color: var(--accent); }
+.week-day.selected { background: var(--surface2); }
+.week-day .wd-name {
+  font-size: 0.62rem; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.week-day .wd-date { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0.1rem 0; }
+.week-day .wd-dots { display: flex; gap: 2px; justify-content: center; flex-wrap: wrap; margin-top: 0.3rem; }
+.wd-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+/* ── SCORE RING ── */
+.day-score-wrap {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+.score-chip {
+  flex: 1; min-width: 100px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+}
+.score-chip-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 0.3rem; }
+.score-chip-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem; font-weight: 800;
+  line-height: 1;
+}
+
+/* ── WEEKLY SUMMARY ── */
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem; margin-bottom: 1.25rem;
+}
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+.summary-card .sc-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem; font-weight: 800; line-height: 1;
+}
+.summary-card .sc-label { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.2rem; }
+.summary-card .sc-bar {
+  height: 3px; background: var(--surface3);
+  border-radius: 2px; margin-top: 0.7rem; overflow: hidden;
+}
+.summary-card .sc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+/* ── VEG BREAKDOWN ── */
+.veg-breakdown { }
+.veg-family-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.veg-family-row:last-child { border-bottom: none; }
+.vf-name { flex: 1; }
+.vf-count { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; min-width: 24px; text-align: right; }
+.vf-bar-wrap { flex: 2; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.vf-bar-fill { height: 100%; border-radius: 2px; }
+
+/* ── SUGGESTIONS ── */
+.suggestion-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.suggestion-item {
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem; line-height: 1.45;
+}
+.suggestion-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+/* ── TREND CHART ── */
+.trend-chart { position: relative; height: 120px; margin: 0.5rem 0; }
+.trend-svg { width: 100%; height: 100%; overflow: visible; }
+
+/* ── TABS inside card ── */
+.inner-tabs { display: flex; gap: 2px; margin-bottom: 1rem; }
+.inner-tab {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px; border: none;
+  background: var(--surface2); color: var(--text-dim);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem; cursor: pointer; transition: all 0.15s;
+}
+.inner-tab.active { background: var(--accent); color: #111; font-weight: 500; }
+
+/* ── PB TABLE ── */
+.pb-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.pb-table th {
+  text-align: left; padding: 0.4rem 0.5rem;
+  color: var(--text-dim); font-weight: 500;
+  font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.pb-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--surface2); }
+.pb-table tr:last-child td { border-bottom: none; }
+.pb-val { font-family: 'Syne', sans-serif; font-weight: 700; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .week-strip { gap: 0.25rem; }
+  .week-day .wd-date { font-size: 0.82rem; }
+  nav { padding: 0 0.75rem; }
+  .nav-tab { padding: 0.38rem 0.6rem; font-size: 0.72rem; }
+  .view { padding: 1rem 0.75rem; }
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card { animation: fadeUp 0.25s ease both; }
+.card:nth-child(2) { animation-delay: 0.04s; }
+.card:nth-child(3) { animation-delay: 0.08s; }
+.card:nth-child(4) { animation-delay: 0.12s; }
+.card:nth-child(5) { animation-delay: 0.16s; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">DAILY</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('today')">Today</button>
+    <button class="nav-tab" onclick="showView('week')">Week</button>
+    <button class="nav-tab" onclick="showView('summary')">Summary</button>
+    <button class="nav-tab" onclick="showView('trends')">Trends</button>
+  </div>
+</nav>
+
+<!-- ══════════════ TODAY VIEW ══════════════ -->
+<div class="view active" id="view-today">
+
+  <div class="day-header">
+    <div>
+      <div class="day-title" id="today-title">Loading…</div>
+      <div class="day-sub" id="today-sub"></div>
+    </div>
+    <div class="day-nav">
+      <button onclick="offsetDay(-1)">‹</button>
+      <button class="today-btn" onclick="goToday()">Today</button>
+      <button onclick="offsetDay(1)">›</button>
+    </div>
+  </div>
+
+  <!-- WEEK STRIP -->
+  <div class="week-strip" id="week-strip"></div>
+
+  <!-- STRENGTH -->
+  <div class="card" id="card-strength">
+    <div class="card-header">
+      <div class="card-icon" style="background:#1e2e1e">💪</div>
+      <div class="card-title">Strength</div>
+      <div class="card-subtitle" id="strength-sub">0/3 this week</div>
+    </div>
+    <div class="progress-row">
+      <span>Weekly target: 3</span>
+      <div class="progress-track"><div class="progress-fill" id="strength-progress" style="width:0%"></div></div>
+      <span id="strength-pct">0%</span>
+    </div>
+    <div id="lifts-container"></div>
+    <!-- session checkbox -->
+    <div class="check-item" id="strength-check" onclick="toggleStrength()" style="margin-top:0.5rem; border-top:1px solid var(--border); padding-top:0.75rem">
+      <div class="check-box" id="strength-check-box"></div>
+      <div class="check-label">Mark session complete</div>
+    </div>
+  </div>
+
+  <!-- CORE & FLEX -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#1e1e3a">🧘</div>
+      <div class="card-title">Core & Flexibility</div>
+    </div>
+    <div class="check-list" id="core-list"></div>
+  </div>
+
+  <!-- FITNESS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#2a1e1e">🏃</div>
+      <div class="card-title">Fitness</div>
+    </div>
+    <div class="check-list" id="fitness-list"></div>
+  </div>
+
+  <!-- HOT & COLD + MOBILITY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#1a2a2a">🧊</div>
+      <div class="card-title">Wellness</div>
+    </div>
+    <div class="check-list" id="wellness-list"></div>
+  </div>
+
+  <!-- GRATITUDE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#2a1e2a">🙏</div>
+      <div class="card-title">Morning Gratitude</div>
+    </div>
+    <div class="check-list" id="gratitude-list"></div>
+  </div>
+
+  <!-- DAY SCORES (weekdays only) -->
+  <div class="card" id="card-scores">
+    <div class="card-header">
+      <div class="card-icon" style="background:#2a2a1e">⭐</div>
+      <div class="card-title">Day Quality</div>
+      <div class="card-subtitle">Weekdays only</div>
+    </div>
+    <div class="slider-list" id="scores-list"></div>
+    <div class="day-score-wrap" id="scores-summary"></div>
+  </div>
+
+  <!-- VEGETABLES -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#1e3a1e">🥦</div>
+      <div class="card-title">Vegetables</div>
+      <div class="card-subtitle" id="veg-count-label">0 portions</div>
+    </div>
+    <div class="veg-input-wrap">
+      <input type="text" id="veg-input" placeholder="e.g. spinach, broccoli…" onkeydown="if(event.key==='Enter')addVeg()">
+      <button class="add-btn" onclick="addVeg()">Add</button>
+    </div>
+    <div class="veg-tags" id="veg-tags"></div>
+  </div>
+
+</div>
+
+<!-- ══════════════ WEEK VIEW ══════════════ -->
+<div class="view" id="view-week">
+  <div class="day-header">
+    <div>
+      <div class="day-title">This <span>Week</span></div>
+      <div class="day-sub" id="week-range-label"></div>
+    </div>
+  </div>
+  <div id="week-view-content"></div>
+</div>
+
+<!-- ══════════════ SUMMARY VIEW ══════════════ -->
+<div class="view" id="view-summary">
+  <div class="day-header">
+    <div>
+      <div class="day-title">Weekly <span>Summary</span></div>
+      <div class="day-sub" id="summary-range-label"></div>
+    </div>
+    <div class="day-nav">
+      <button onclick="offsetWeek(-1)">‹</button>
+      <button class="today-btn" onclick="currentWeekOffset=0;renderSummary()">This week</button>
+      <button onclick="offsetWeek(1)">›</button>
+    </div>
+  </div>
+  <div id="summary-content"></div>
+</div>
+
+<!-- ══════════════ TRENDS VIEW ══════════════ -->
+<div class="view" id="view-trends">
+  <div class="day-header">
+    <div>
+      <div class="day-title">Trends <span>&amp; PBs</span></div>
+    </div>
+  </div>
+  <div id="trends-content"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  DATA SCHEMA & STORAGE
+// ══════════════════════════════════════════
+const STORE = 'daily_tracker_v1';
+let db = {};
+try { db = JSON.parse(localStorage.getItem(STORE)) || {}; } catch(e) { db = {}; }
+function save() { localStorage.setItem(STORE, JSON.stringify(db)); }
+function dayKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function dayData(key) {
+  if (!db[key]) db[key] = {};
+  return db[key];
+}
+
+// ── CONFIG ──────────────────────────────
+const LIFTS = ['Deadlift','Squat','Bench','Press'];
+
+const CORE_ITEMS = [
+  { id:'stretch', label:'Stretch', target:'4× / week' },
+  { id:'core',    label:'Core',    target:'2× / week' },
+];
+const FITNESS_ITEMS = [
+  { id:'cardio', label:'Cardio',  target:'3× / week' },
+  { id:'sprint', label:'Sprint',  target:'1× / week' },
+];
+const WELLNESS_ITEMS = [
+  { id:'hotcold',  label:'Hot & Cold',        target:'daily' },
+  { id:'mobility', label:'Morning Mobility',  target:'5× / week' },
+];
+const GRATITUDE_ITEMS = [
+  { id:'reflection', label:'Personal reflection' },
+  { id:'thankyou',   label:'Written thank you' },
+];
+const SCORE_ITEMS = [
+  { id:'goals',      label:'Set clear goals' },
+  { id:'achieve',    label:'Achieved them' },
+  { id:'meaning',    label:'Found meaning' },
+  { id:'happy',      label:'Was happy' },
+  { id:'relations',  label:'Built relationships' },
+  { id:'engaged',    label:'Fully engaged' },
+];
+
+// Vegetable family classifier
+const VEG_FAMILIES = {
+  leafy:       { label:'Leafy Greens',   color:'#6fcf97', bg:'#1e3a2a',
+    words:['spinach','kale','lettuce','rocket','arugula','chard','watercress','pak choi','bok choy','cabbage','spring greens','collard','endive','radicchio','chicory'] },
+  cruciferous: { label:'Cruciferous',    color:'#a8d86e', bg:'#2a3a1e',
+    words:['broccoli','cauliflower','brussels','sprout','kohlrabi','radish','turnip','swede','rutabaga'] },
+  root:        { label:'Root',           color:'#f4a261', bg:'#3a2a1e',
+    words:['carrot','parsnip','beetroot','beet','sweet potato','potato','celeriac','yam','ginger','turmeric'] },
+  allium:      { label:'Alliums',        color:'#d8a8f0', bg:'#3a1e3a',
+    words:['onion','garlic','leek','shallot','chive','spring onion','scallion'] },
+  legume:      { label:'Legumes',        color:'#6ec6f4', bg:'#1e2a3a',
+    words:['pea','bean','lentil','chickpea','edamame','broad bean','runner bean','green bean','mangetout','snap pea'] },
+  cucurbit:    { label:'Cucurbits',      color:'#6ef4d8', bg:'#1e3a3a',
+    words:['courgette','zucchini','cucumber','pumpkin','squash','marrow','gourd'] },
+  nightshade:  { label:'Nightshades',    color:'#f46e6e', bg:'#3a1e1e',
+    words:['tomato','pepper','aubergine','eggplant','chilli','paprika','capsicum'] },
+};
+function classifyVeg(name) {
+  const n = name.toLowerCase();
+  for (const [key, fam] of Object.entries(VEG_FAMILIES)) {
+    if (fam.words.some(w => n.includes(w))) return key;
+  }
+  return 'other';
+}
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let viewDate = new Date();  // date currently shown in today tab
+let currentWeekOffset = 0;
+
+function today() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function weekStart(d) { const r = new Date(d); r.setDate(r.getDate() - r.getDay() + 1); r.setHours(0,0,0,0); return r; }
+function sameDay(a,b) { return dayKey(a) === dayKey(b); }
+function isWeekday(d) { return d.getDay() >= 1 && d.getDay() <= 5; }
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ══════════════════════════════════════════
+//  VIEW SWITCHING
+// ══════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'week') renderWeekView();
+  if (name === 'summary') renderSummary();
+  if (name === 'trends') renderTrends();
+}
+
+// ══════════════════════════════════════════
+//  TODAY VIEW
+// ══════════════════════════════════════════
+function offsetDay(n) { viewDate = addDays(viewDate, n); renderToday(); }
+function goToday()    { viewDate = today(); renderToday(); }
+
+function renderToday() {
+  const d = viewDate;
+  const key = dayKey(d);
+  const data = dayData(key);
+  const isToday = sameDay(d, today());
+  const weekday = isWeekday(d);
+
+  // Header
+  document.getElementById('today-title').innerHTML =
+    `${DAYS[d.getDay()]}, ${d.getDate()} <span>${MONTHS[d.getMonth()]}</span>`;
+  document.getElementById('today-sub').textContent =
+    isToday ? 'Today' : `${Math.abs(Math.round((d - today())/(1000*60*60*24)))} days ${d < today() ? 'ago' : 'ahead'}`;
+
+  // Week strip
+  renderWeekStrip();
+
+  // Strength progress
+  const ws = weekStart(d);
+  let strengthCount = 0;
+  for (let i=0;i<7;i++) { const dk = dayKey(addDays(ws,i)); if (db[dk]?.strength_done) strengthCount++; }
+  const spct = Math.min(100, Math.round(strengthCount/3*100));
+  document.getElementById('strength-sub').textContent = `${strengthCount}/3 this week`;
+  document.getElementById('strength-progress').style.width = spct + '%';
+  document.getElementById('strength-pct').textContent = spct + '%';
+
+  // Strength check
+  const sdone = data.strength_done || false;
+  const scb = document.getElementById('strength-check-box');
+  const sci = document.getElementById('strength-check');
+  scb.textContent = sdone ? '✓' : '';
+  sci.className = 'check-item' + (sdone ? ' done' : '');
+
+  // Lifts
+  renderLifts(key);
+
+  // Core & flex
+  renderCheckList('core-list', CORE_ITEMS, key, 'core');
+  // Fitness
+  renderCheckList('fitness-list', FITNESS_ITEMS, key, 'fitness');
+  // Wellness
+  renderCheckList('wellness-list', WELLNESS_ITEMS, key, 'wellness');
+  // Gratitude
+  renderCheckList('gratitude-list', GRATITUDE_ITEMS, key, 'gratitude');
+
+  // Scores
+  const cardScores = document.getElementById('card-scores');
+  if (weekday) {
+    cardScores.style.display = '';
+    renderScores(key);
+  } else {
+    cardScores.style.display = 'none';
+  }
+
+  // Veg
+  renderVeg(key);
+}
+
+// ── WEEK STRIP ─────────────────────────
+function renderWeekStrip() {
+  const ws = weekStart(viewDate);
+  const strip = document.getElementById('week-strip');
+  strip.innerHTML = '';
+  for (let i=0; i<7; i++) {
+    const d = addDays(ws, i);
+    const key = dayKey(d);
+    const data = db[key] || {};
+    const isSelected = sameDay(d, viewDate);
+    const isTod = sameDay(d, today());
+
+    // dots: each category done
+    const dots = [];
+    if (data.strength_done) dots.push(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#C8F060');
+    if ((data.core || {}).stretch) dots.push('#60C8F0');
+    if ((data.fitness || {}).cardio) dots.push('#F0A060');
+    if ((data.wellness || {}).hotcold) dots.push('#F06080');
+
+    const el = document.createElement('div');
+    el.className = 'week-day' + (isTod ? ' today' : '') + (isSelected ? ' selected' : '');
+    el.innerHTML = `
+      <div class="wd-name">${DAYS[d.getDay()]}</div>
+      <div class="wd-date">${d.getDate()}</div>
+      <div class="wd-dots">${dots.map(c=>`<div class="wd-dot" style="background:${c}"></div>`).join('')}</div>`;
+    el.onclick = () => { viewDate = d; renderToday(); };
+    strip.appendChild(el);
+  }
+}
+
+// ── CHECK LISTS ────────────────────────
+function renderCheckList(containerId, items, key, section) {
+  const data = dayData(key);
+  if (!data[section]) data[section] = {};
+  const container = document.getElementById(containerId);
+  container.innerHTML = items.map(item => {
+    const done = data[section][item.id] || false;
+    return `<div class="check-item${done?' done':''}" onclick="toggleCheck('${key}','${section}','${item.id}')">
+      <div class="check-box">${done?'✓':''}</div>
+      <div class="check-label">${item.label}</div>
+      ${item.target ? `<div class="check-target">${item.target}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+function toggleCheck(key, section, id) {
+  const data = dayData(key);
+  if (!data[section]) data[section] = {};
+  data[section][id] = !data[section][id];
+  save(); renderToday();
+}
+function toggleStrength() {
+  const key = dayKey(viewDate);
+  const data = dayData(key);
+  data.strength_done = !data.strength_done;
+  save(); renderToday();
+}
+
+// ── LIFTS ──────────────────────────────
+function renderLifts(key) {
+  const data = dayData(key);
+  if (!data.lifts) data.lifts = {};
+  const container = document.getElementById('lifts-container');
+  container.innerHTML = LIFTS.map(lift => {
+    const lkey = lift.toLowerCase();
+    if (!data.lifts[lkey]) data.lifts[lkey] = [];
+    const sets = data.lifts[lkey];
+    const pb = getPB(lift);
+    const maxToday = sets.reduce((m,s)=>Math.max(m, parseFloat(s.weight)||0), 0);
+    const isNewPB = maxToday > 0 && pb > 0 && maxToday >= pb;
+    return `<div class="lift-section">
+      <div class="lift-header">
+        <div class="lift-name">${lift}</div>
+        <div class="pb-badge${isNewPB?' show':''}">PB ${pb}kg</div>
+      </div>
+      <div class="set-header"><span>Set</span><span>Reps</span><span>Weight (kg)</span><span></span></div>
+      <div class="lift-sets" id="sets-${lkey}">
+        ${sets.map((s,i)=>`
+          <div class="set-row">
+            <div class="set-num">${i+1}</div>
+            <input class="set-input" type="number" placeholder="—" value="${s.reps||''}"
+              onchange="updateSet('${key}','${lkey}',${i},'reps',this.value)">
+            <input class="set-input" type="number" placeholder="—" value="${s.weight||''}"
+              onchange="updateSet('${key}','${lkey}',${i},'weight',this.value)">
+            <button class="set-del" onclick="delSet('${key}','${lkey}',${i})">×</button>
+          </div>`).join('')}
+      </div>
+      <button class="add-set-btn" onclick="addSet('${key}','${lkey}')">+ Add set</button>
+    </div>`;
+  }).join('');
+}
+function addSet(key, lkey) {
+  const data = dayData(key);
+  if (!data.lifts) data.lifts = {};
+  if (!data.lifts[lkey]) data.lifts[lkey] = [];
+  data.lifts[lkey].push({ reps:'', weight:'' });
+  save(); renderLifts(key);
+}
+function delSet(key, lkey, idx) {
+  const data = dayData(key);
+  data.lifts[lkey].splice(idx, 1);
+  save(); renderLifts(key);
+}
+function updateSet(key, lkey, idx, field, val) {
+  const data = dayData(key);
+  data.lifts[lkey][idx][field] = val;
+  save();
+  // Check PB
+  const maxW = data.lifts[lkey].reduce((m,s)=>Math.max(m,parseFloat(s.weight)||0),0);
+  updatePB(lkey.charAt(0).toUpperCase()+lkey.slice(1), maxW);
+  renderLifts(key);
+}
+function getPB(lift) {
+  if (!db._pbs) return 0;
+  return db._pbs[lift.toLowerCase()] || 0;
+}
+function updatePB(lift, weight) {
+  if (!db._pbs) db._pbs = {};
+  const lkey = lift.toLowerCase();
+  if (weight > (db._pbs[lkey] || 0)) {
+    db._pbs[lkey] = weight;
+    save();
+  }
+}
+
+// ── SCORES ─────────────────────────────
+function renderScores(key) {
+  const data = dayData(key);
+  if (!data.scores) data.scores = {};
+  const list = document.getElementById('scores-list');
+  list.innerHTML = SCORE_ITEMS.map(item => {
+    const val = data.scores[item.id] || 5;
+    return `<div class="slider-item">
+      <div class="slider-top">
+        <div class="slider-label">${item.label}</div>
+        <div class="slider-val" id="sv-${item.id}">${val}</div>
+      </div>
+      <input type="range" min="1" max="10" value="${val}"
+        oninput="updateScore('${key}','${item.id}',this.value)"
+        onchange="updateScore('${key}','${item.id}',this.value)">
+    </div>`;
+  }).join('');
+
+  renderScoresSummary(key);
+}
+function updateScore(key, id, val) {
+  const data = dayData(key);
+  if (!data.scores) data.scores = {};
+  data.scores[id] = Number(val);
+  document.getElementById('sv-' + id).textContent = val;
+  save();
+  renderScoresSummary(key);
+}
+function renderScoresSummary(key) {
+  const data = dayData(key);
+  const scores = data.scores || {};
+  const vals = SCORE_ITEMS.map(i => scores[i.id] || 5);
+  const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+  const colors = { low:'#F06080', mid:'#F0A060', high:'#C8F060' };
+  const col = avg < 4 ? colors.low : avg < 7 ? colors.mid : colors.high;
+  document.getElementById('scores-summary').innerHTML =
+    `<div class="score-chip" style="border-color:${col}20">
+      <div class="score-chip-label">Day average</div>
+      <div class="score-chip-val" style="color:${col}">${avg.toFixed(1)}</div>
+    </div>`;
+}
+
+// ── VEGETABLES ─────────────────────────
+function addVeg() {
+  const input = document.getElementById('veg-input');
+  const val = input.value.trim();
+  if (!val) return;
+  const key = dayKey(viewDate);
+  const data = dayData(key);
+  if (!data.veg) data.veg = [];
+  val.split(',').map(v=>v.trim()).filter(Boolean).forEach(v => {
+    data.veg.push({ name: v, family: classifyVeg(v) });
+  });
+  save();
+  input.value = '';
+  renderVeg(key);
+  updateVegCountLabel(key);
+}
+function removeVeg(key, idx) {
+  const data = dayData(key);
+  data.veg.splice(idx, 1);
+  save(); renderVeg(key); updateVegCountLabel(key);
+}
+function renderVeg(key) {
+  const data = dayData(key);
+  const vegs = data.veg || [];
+  const container = document.getElementById('veg-tags');
+  container.innerHTML = vegs.map((v,i) => {
+    const fam = VEG_FAMILIES[v.family];
+    const bg  = fam ? fam.bg    : '#2a2a2a';
+    const col = fam ? fam.color : '#b0b0b0';
+    return `<div class="veg-tag" style="background:${bg};color:${col}">
+      ${v.name}
+      <button onclick="removeVeg('${key}',${i})">×</button>
+    </div>`;
+  }).join('');
+  updateVegCountLabel(key);
+}
+function updateVegCountLabel(key) {
+  const data = dayData(key);
+  const n = (data.veg || []).length;
+  document.getElementById('veg-count-label').textContent = `${n} portion${n!==1?'s':''}`;
+}
+
+// ══════════════════════════════════════════
+//  WEEK VIEW
+// ══════════════════════════════════════════
+function renderWeekView() {
+  const ws = weekStart(today());
+  const label = `${ws.getDate()} ${MONTHS[ws.getMonth()]} – ${addDays(ws,6).getDate()} ${MONTHS[addDays(ws,6).getMonth()]}`;
+  document.getElementById('week-range-label').textContent = label;
+
+  let html = '';
+  for (let i=0; i<7; i++) {
+    const d = addDays(ws, i);
+    const key = dayKey(d);
+    const data = db[key] || {};
+    const scores = data.scores || {};
+    const avgScore = isWeekday(d) && Object.keys(scores).length
+      ? (Object.values(scores).reduce((a,b)=>a+b,0) / Object.values(scores).length).toFixed(1)
+      : null;
+    const vegs = (data.veg || []).length;
+    const isToday = sameDay(d, today());
+
+    html += `<div class="card" style="margin-bottom:0.6rem;${isToday?'border-color:var(--accent)':''}">
+      <div class="card-header" style="margin-bottom:0.5rem">
+        <div class="card-title">${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}${isToday?' · Today':''}</div>
+        ${avgScore ? `<div class="card-subtitle">Day score: ${avgScore}/10</div>` : ''}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;font-size:0.75rem;">
+        ${miniChip('💪 Strength', data.strength_done)}
+        ${miniChip('🧘 Stretch', (data.core||{}).stretch)}
+        ${miniChip('⚡ Core', (data.core||{}).core)}
+        ${miniChip('🏃 Cardio', (data.fitness||{}).cardio)}
+        ${miniChip('🔥 Sprint', (data.fitness||{}).sprint)}
+        ${miniChip('🧊 Hot/Cold', (data.wellness||{}).hotcold)}
+        ${miniChip('🌅 Mobility', (data.wellness||{}).mobility)}
+        ${miniChip('🙏 Reflection', (data.gratitude||{}).reflection)}
+        ${miniChip('💌 Thank you', (data.gratitude||{}).thankyou)}
+        ${vegs > 0 ? `<span style="padding:0.25rem 0.6rem;border-radius:20px;background:var(--surface2);color:var(--accent)">🥦 ${vegs} portions</span>` : ''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('week-view-content').innerHTML = html;
+}
+function miniChip(label, done) {
+  const bg  = done ? 'var(--surface3)' : 'transparent';
+  const col = done ? 'var(--text)'     : 'var(--text-dim)';
+  const bdr = done ? 'var(--border)'   : 'var(--surface2)';
+  return `<span style="padding:0.25rem 0.6rem;border-radius:20px;background:${bg};color:${col};border:1px solid ${bdr}">${label}</span>`;
+}
+
+// ══════════════════════════════════════════
+//  SUMMARY VIEW
+// ══════════════════════════════════════════
+function offsetWeek(n) { currentWeekOffset += n; renderSummary(); }
+
+function renderSummary() {
+  const ws = addDays(weekStart(today()), currentWeekOffset * 7);
+  const we = addDays(ws, 6);
+  document.getElementById('summary-range-label').textContent =
+    `${ws.getDate()} ${MONTHS[ws.getMonth()]} – ${we.getDate()} ${MONTHS[we.getMonth()]}`;
+
+  // Gather week data
+  const weekDays = Array.from({length:7}, (_,i) => addDays(ws, i));
+  const weekKeys = weekDays.map(d => dayKey(d));
+  const weekData = weekKeys.map(k => db[k] || {});
+
+  // Counts
+  const strengthSessions = weekData.filter(d => d.strength_done).length;
+  const stretches   = weekData.filter(d => (d.core||{}).stretch).length;
+  const cores       = weekData.filter(d => (d.core||{}).core).length;
+  const cardios     = weekData.filter(d => (d.fitness||{}).cardio).length;
+  const sprints     = weekData.filter(d => (d.fitness||{}).sprint).length;
+  const hotcolds    = weekData.filter(d => (d.wellness||{}).hotcold).length;
+  const mobilities  = weekData.filter(d => (d.wellness||{}).mobility).length;
+
+  // Average day score (weekdays)
+  let scoreTotal = 0, scoreDays = 0;
+  weekDays.forEach((d,i) => {
+    if (isWeekday(d)) {
+      const sc = weekData[i].scores || {};
+      if (Object.keys(sc).length) {
+        scoreTotal += Object.values(sc).reduce((a,b)=>a+b,0) / Object.values(sc).length;
+        scoreDays++;
+      }
+    }
+  });
+  const avgDayScore = scoreDays ? (scoreTotal/scoreDays).toFixed(1) : '—';
+
+  // Per-score averages
+  const scoreAvgs = SCORE_ITEMS.map(item => {
+    let tot=0, cnt=0;
+    weekDays.forEach((d,i) => {
+      if (isWeekday(d) && weekData[i].scores?.[item.id]) {
+        tot += weekData[i].scores[item.id]; cnt++;
+      }
+    });
+    return { label: item.label, avg: cnt ? (tot/cnt).toFixed(1) : '—' };
+  });
+
+  // All veg this week
+  const allVeg = weekData.flatMap(d => d.veg || []);
+  const vegByFamily = {};
+  allVeg.forEach(v => { vegByFamily[v.family] = (vegByFamily[v.family]||0) + 1; });
+  const maxVeg = Math.max(...Object.values(vegByFamily), 1);
+
+  // Suggestions
+  const suggestions = generateSuggestions({
+    strengthSessions, stretches, cores, cardios, sprints, hotcolds, mobilities,
+    avgDayScore: scoreDays ? scoreTotal/scoreDays : null,
+    vegByFamily, totalVeg: allVeg.length, scoreAvgs
+  });
+
+  const accColor = v => v < 4 ? 'var(--accent4)' : v < 7 ? 'var(--accent3)' : 'var(--accent)';
+
+  let html = `<div class="summary-grid">
+    ${summaryCard('💪', strengthSessions, 'Strength sessions', 3, 'var(--accent)')}
+    ${summaryCard('🧘', stretches, 'Stretches', 4, 'var(--accent2)')}
+    ${summaryCard('⚡', cores, 'Core sessions', 2, 'var(--accent2)')}
+    ${summaryCard('🏃', cardios, 'Cardio sessions', 3, 'var(--accent3)')}
+    ${summaryCard('🔥', sprints, 'Sprint sessions', 1, 'var(--accent3)')}
+    ${summaryCard('🧊', hotcolds, 'Hot & Cold', 7, 'var(--accent4)')}
+    ${summaryCard('🌅', mobilities, 'Morning Mobility', 5, 'var(--accent)')}
+    ${summaryCard('⭐', avgDayScore, 'Avg Day Score', null, accColor(parseFloat(avgDayScore)||0))}
+    ${summaryCard('🥦', allVeg.length, 'Veg portions', null, 'var(--accent)')}
+  </div>`;
+
+  // Per-score breakdown
+  html += `<div class="card">
+    <div class="card-header"><div class="card-icon" style="background:#2a2a1e">⭐</div>
+    <div class="card-title">Day Quality Breakdown</div></div>
+    <div class="slider-list">
+      ${scoreAvgs.map(s => {
+        const v = parseFloat(s.avg) || 0;
+        const pct = v/10*100;
+        return `<div class="slider-item">
+          <div class="slider-top">
+            <div class="slider-label">${s.label}</div>
+            <div class="slider-val" style="color:${accColor(v)}">${s.avg}</div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${accColor(v)}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // Veg breakdown
+  if (allVeg.length > 0) {
+    html += `<div class="card">
+      <div class="card-header"><div class="card-icon" style="background:#1e3a1e">🥦</div>
+      <div class="card-title">Vegetable Breakdown</div>
+      <div class="card-subtitle">${allVeg.length} total portions</div></div>
+      <div class="veg-breakdown">
+        ${Object.entries(vegByFamily).sort((a,b)=>b[1]-a[1]).map(([fam, count]) => {
+          const f = VEG_FAMILIES[fam] || { label: 'Other', color:'#b0b0b0' };
+          return `<div class="veg-family-row">
+            <div class="vf-name" style="color:${f.color}">${f.label}</div>
+            <div class="vf-bar-wrap"><div class="vf-bar-fill" style="width:${count/maxVeg*100}%;background:${f.color}"></div></div>
+            <div class="vf-count" style="color:${f.color}">${count}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Suggestions
+  if (suggestions.length) {
+    html += `<div class="card">
+      <div class="card-header"><div class="card-icon" style="background:#2a2a1e">💡</div>
+      <div class="card-title">Next Week — Suggestions</div></div>
+      <div class="suggestion-list">
+        ${suggestions.map(s=>`<div class="suggestion-item">
+          <div class="suggestion-icon">${s.icon}</div>
+          <div>${s.text}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('summary-content').innerHTML = html;
+}
+
+function summaryCard(icon, val, label, target, color) {
+  const pct = target ? Math.min(100, Math.round((parseFloat(val)||0)/target*100)) : null;
+  return `<div class="summary-card">
+    <div class="sc-num" style="color:${color}">${val}</div>
+    <div class="sc-label">${icon} ${label}${target ? ' / '+target : ''}</div>
+    ${pct !== null ? `<div class="sc-bar"><div class="sc-bar-fill" style="width:${pct}%;background:${color}"></div></div>` : ''}
+  </div>`;
+}
+
+function generateSuggestions({ strengthSessions, stretches, cores, cardios, sprints,
+  hotcolds, mobilities, avgDayScore, vegByFamily, totalVeg, scoreAvgs }) {
+  const s = [];
+
+  if (strengthSessions < 3) s.push({ icon:'💪', text:`You completed ${strengthSessions}/3 strength sessions. Try booking them in your calendar at the start of the week.` });
+  if (stretches < 4) s.push({ icon:'🧘', text:`Only ${stretches}/4 stretches done. Consider a 10-min stretch before bed to hit target.` });
+  if (cores < 2) s.push({ icon:'⚡', text:`${cores}/2 core sessions — pair it with your strength days to make it a habit.` });
+  if (cardios < 3) s.push({ icon:'🏃', text:`${cardios}/3 cardio sessions. Even a brisk 20-minute walk counts.` });
+  if (sprints < 1) s.push({ icon:'🔥', text:`No sprint session this week. A 4×30s effort tacked onto any cardio session will do it.` });
+  if (hotcolds < 4) s.push({ icon:'🧊', text:`Hot & cold done ${hotcolds} days. Daily contrast showers take under 5 minutes.` });
+  if (mobilities < 5) s.push({ icon:'🌅', text:`Morning mobility ${mobilities}/5 days. Set a phone alarm labelled "move" as your first alarm.` });
+
+  // Veg suggestions
+  if (totalVeg < 14) s.push({ icon:'🥦', text:`Aim for 2+ portions per day — you had ${totalVeg} this week. Add veg to every main meal.` });
+  const allFamilies = Object.keys(VEG_FAMILIES);
+  const missing = allFamilies.filter(f => !vegByFamily[f]);
+  if (missing.length) {
+    const names = missing.map(f => VEG_FAMILIES[f].label).join(', ');
+    s.push({ icon:'🌈', text:`Missing these veg families this week: ${names}. Variety feeds different gut microbiomes.` });
+  }
+  if (!vegByFamily.cruciferous) s.push({ icon:'🥦', text:`No cruciferous veg (broccoli, cauliflower, Brussels sprouts) this week — these are especially valuable for hormone regulation.` });
+
+  // Score suggestions
+  if (avgDayScore && avgDayScore < 6) {
+    const lowest = [...scoreAvgs].filter(x => x.avg !== '—').sort((a,b)=>a.avg-b.avg)[0];
+    if (lowest) s.push({ icon:'⭐', text:`Your lowest day-quality score was "${lowest.label}" (${lowest.avg}/10). What one small change could shift this next week?` });
+  }
+
+  return s.slice(0, 6);
+}
+
+// ══════════════════════════════════════════
+//  TRENDS VIEW
+// ══════════════════════════════════════════
+function renderTrends() {
+  // Get last 8 weeks of data
+  const weeks = [];
+  for (let w=7; w>=0; w--) {
+    const ws = addDays(weekStart(today()), -w*7);
+    const weekDays = Array.from({length:7}, (_,i) => addDays(ws, i));
+    const weekData = weekDays.map(d => db[dayKey(d)] || {});
+    const strengthCount = weekData.filter(d=>d.strength_done).length;
+    const vegs = weekData.flatMap(d=>d.veg||[]).length;
+    let scoreTotal=0, scoreCnt=0;
+    weekDays.forEach((d,i)=>{
+      if (isWeekday(d) && weekData[i].scores) {
+        const vals = Object.values(weekData[i].scores);
+        if (vals.length) { scoreTotal += vals.reduce((a,b)=>a+b,0)/vals.length; scoreCnt++; }
+      }
+    });
+    weeks.push({
+      label: ws.getDate()+' '+MONTHS[ws.getMonth()],
+      strength: strengthCount,
+      veg: vegs,
+      score: scoreCnt ? scoreTotal/scoreCnt : null
+    });
+  }
+
+  // PB table
+  const pbs = db._pbs || {};
+
+  let html = `<div class="card">
+    <div class="card-header"><div class="card-icon" style="background:#2e1e1e">🏆</div>
+    <div class="card-title">Personal Bests</div></div>
+    <table class="pb-table">
+      <tr><th>Lift</th><th>Best weight (kg)</th></tr>
+      ${LIFTS.map(l => `<tr>
+        <td>${l}</td>
+        <td><span class="pb-val" style="color:var(--accent)">${pbs[l.toLowerCase()] || '—'}</span></td>
+      </tr>`).join('')}
+    </table>
+  </div>`;
+
+  // Strength trend
+  html += `<div class="card">
+    <div class="card-header"><div class="card-icon" style="background:#1e2e1e">💪</div>
+    <div class="card-title">Strength Sessions / Week</div></div>
+    ${sparkChart(weeks.map(w=>w.strength), 0, 3, 'var(--accent)', weeks.map(w=>w.label))}
+  </div>`;
+
+  // Veg trend
+  html += `<div class="card">
+    <div class="card-header"><div class="card-icon" style="background:#1e3a1e">🥦</div>
+    <div class="card-title">Veg Portions / Week</div></div>
+    ${sparkChart(weeks.map(w=>w.veg), 0, 20, '#6fcf97', weeks.map(w=>w.label))}
+  </div>`;
+
+  // Day score trend
+  html += `<div class="card">
+    <div class="card-header"><div class="card-icon" style="background:#2a2a1e">⭐</div>
+    <div class="card-title">Average Day Score / Week</div></div>
+    ${sparkChart(weeks.map(w=>w.score), 0, 10, 'var(--accent3)', weeks.map(w=>w.label), true)}
+  </div>`;
+
+  document.getElementById('trends-content').innerHTML = html;
+}
+
+function sparkChart(values, ymin, ymax, color, labels, isScore) {
+  const W = 800, H = 100, padL=8, padR=8, padT=10, padB=24;
+  const n = values.length;
+  if (n < 2) return '<div style="color:var(--text-dim);font-size:0.8rem;padding:0.5rem">Not enough data yet</div>';
+
+  const pts = values.map((v, i) => {
+    const x = padL + (i/(n-1)) * (W - padL - padR);
+    const eff = v === null ? null : (v - ymin) / (ymax - ymin);
+    const y = eff === null ? null : H - padB - eff * (H - padT - padB);
+    return { x, y, v };
+  });
+
+  const pathD = pts.filter(p=>p.y!==null).map((p,i)=>
+    (i===0?'M':'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)
+  ).join(' ');
+
+  const dots = pts.filter(p=>p.y!==null).map(p =>
+    `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${color}"/>`
+  ).join('');
+
+  const xLabels = labels.map((l,i) => {
+    const x = padL + (i/(n-1)) * (W - padL - padR);
+    return `<text x="${x.toFixed(1)}" y="${H}" text-anchor="middle" font-size="9" fill="#5A5E6B">${l}</text>`;
+  }).join('');
+
+  const valLabels = pts.filter(p=>p.y!==null).map(p => {
+    const disp = p.v === null ? '' : isScore ? p.v.toFixed(1) : p.v;
+    return `<text x="${p.x.toFixed(1)}" y="${(p.y-7).toFixed(1)}" text-anchor="middle" font-size="9" fill="${color}">${disp}</text>`;
+  }).join('');
+
+  return `<div class="trend-chart">
+    <svg class="trend-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+      ${dots}${valLabels}${xLabels}
+    </svg>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+viewDate = today();
+renderToday();
+</script>
+</body>
+</html>
