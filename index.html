@@ -534,8 +534,16 @@ async function initApp(user) {
 
 // Listen for auth state changes (including magic link redirect)
 _supabase.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
+  console.log('Auth event:', event, session?.user?.email); // Debug logging
+  if (event === 'SIGNED_IN' && session?.user) {
+    // Clean the URL hash after successful magic link auth
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
     await initApp(session.user);
+  } else if (event === 'SIGNED_OUT') {
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
   }
 });
 
