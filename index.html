@@ -9,21 +9,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0E0F11;
-  --surface: #16181C;
-  --surface2: #1E2128;
-  --surface3: #262A33;
-  --border: #2E3340;
-  --text: #F0F0EE;
-  --text-mid: #9A9DA8;
-  --text-dim: #5A5E6B;
-  --accent: #C8F060;   /* sharp lime */
-  --accent2: #60C8F0;  /* sky blue */
-  --accent3: #F0A060;  /* warm amber */
-  --accent4: #F06080;  /* rose */
-  --danger: #F06060;
-  --radius: 12px;
-  --radius-sm: 7px;
+  --bg: #F7F7F5;
+  --surface: #FFFFFF;
+  --surface2: #F2F2F0;
+  --surface3: #E8E8E4;
+  --border: #E0DDD8;
+  --border-strong: #C8C4BC;
+  --text: #1A1A18;
+  --text-mid: #6B6B65;
+  --text-dim: #A8A49C;
+  --accent: #2D6A2D;      /* forest green */
+  --accent-light: #E8F5E8;
+  --accent2: #1A5C8A;     /* deep blue */
+  --accent2-light: #E8F2FA;
+  --accent3: #C4651A;     /* warm amber */
+  --accent3-light: #FDF0E4;
+  --accent4: #B83050;     /* rose */
+  --accent4-light: #FAE8EE;
+  --danger: #CC3333;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -38,38 +44,38 @@ body {
 /* ── NAV ── */
 nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(14,15,17,0.92);
+  background: rgba(247,247,245,0.94);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;
-  padding: 0 1.25rem;
-  height: 56px; gap: 0;
+  padding: 0 1.5rem;
+  height: 58px;
 }
 .nav-logo {
   font-family: 'Syne', sans-serif;
   font-weight: 800; font-size: 1rem;
-  color: var(--accent); letter-spacing: -0.01em;
+  color: var(--accent); letter-spacing: 0.04em;
   margin-right: auto;
 }
 .nav-tabs { display: flex; gap: 2px; }
 .nav-tab {
-  padding: 0.45rem 0.9rem;
-  border-radius: var(--radius-sm);
+  padding: 0.45rem 1rem;
+  border-radius: 20px;
   border: none; background: transparent;
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.78rem; font-weight: 500;
+  font-size: 0.8rem; font-weight: 500;
   color: var(--text-mid); cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 }
 .nav-tab:hover { color: var(--text); background: var(--surface2); }
-.nav-tab.active { background: var(--surface3); color: var(--text); }
+.nav-tab.active { background: var(--text); color: #fff; }
 
 /* ── VIEWS ── */
-.view { display: none; max-width: 900px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+.view { display: none; max-width: 860px; margin: 0 auto; padding: 1.75rem 1.5rem; }
 .view.active { display: block; }
 
-/* ── HEADER BLOCK ── */
+/* ── PAGE HEADER ── */
 .day-header {
   display: flex; align-items: flex-end;
   justify-content: space-between;
@@ -77,119 +83,118 @@ nav {
 }
 .day-title {
   font-family: 'Syne', sans-serif;
-  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-size: clamp(1.7rem, 5vw, 2.6rem);
   font-weight: 800; line-height: 1; letter-spacing: -0.03em;
+  color: var(--text);
 }
 .day-title span { color: var(--accent); }
-.day-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.3rem; }
+.day-sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.35rem; font-weight: 400; }
 .day-nav { display: flex; gap: 0.4rem; align-items: center; }
 .day-nav button {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 34px; height: 34px; border-radius: 50%;
   border: 1px solid var(--border); background: var(--surface);
-  color: var(--text-mid); cursor: pointer; font-size: 0.9rem;
+  color: var(--text-mid); cursor: pointer; font-size: 1rem;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.15s; box-shadow: var(--shadow);
 }
 .day-nav button:hover { background: var(--surface2); color: var(--text); }
 .day-nav .today-btn {
-  width: auto; border-radius: 20px; padding: 0 0.7rem;
-  font-family: 'Instrument Sans', sans-serif; font-size: 0.72rem;
+  width: auto; border-radius: 20px; padding: 0 0.9rem;
+  font-family: 'Instrument Sans', sans-serif; font-size: 0.75rem; font-weight: 500;
 }
 
-/* ── SECTION CARD ── */
+/* ── CARD ── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.25rem;
-  margin-bottom: 1rem;
+  padding: 1.35rem;
+  margin-bottom: 0.9rem;
+  box-shadow: var(--shadow);
 }
 .card-header {
-  display: flex; align-items: center; gap: 0.6rem;
+  display: flex; align-items: center; gap: 0.65rem;
   margin-bottom: 1.1rem;
 }
 .card-icon {
-  width: 30px; height: 30px; border-radius: 8px;
+  width: 32px; height: 32px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.95rem; flex-shrink: 0;
+  font-size: 1rem; flex-shrink: 0;
 }
 .card-title {
   font-family: 'Syne', sans-serif;
-  font-weight: 700; font-size: 0.88rem;
-  letter-spacing: 0.03em; text-transform: uppercase;
+  font-weight: 700; font-size: 0.82rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text);
 }
-.card-subtitle { font-size: 0.72rem; color: var(--text-dim); margin-left: auto; }
+.card-subtitle { font-size: 0.72rem; color: var(--text-dim); margin-left: auto; font-weight: 400; }
 
 /* ── PROGRESS ROW ── */
 .progress-row {
-  display: flex; align-items: center; gap: 0.5rem;
-  font-size: 0.75rem; color: var(--text-dim);
-  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.74rem; color: var(--text-dim);
+  margin-bottom: 1.1rem;
 }
 .progress-track {
-  flex: 1; height: 4px; background: var(--surface3);
-  border-radius: 2px; overflow: hidden;
+  flex: 1; height: 5px; background: var(--surface3);
+  border-radius: 3px; overflow: hidden;
 }
 .progress-fill {
-  height: 100%; border-radius: 2px;
+  height: 100%; border-radius: 3px;
   background: var(--accent);
   transition: width 0.4s ease;
 }
 
-/* ── CHECKBOX ITEMS ── */
-.check-list { display: flex; flex-direction: column; gap: 0.45rem; }
+/* ── CHECKBOXES ── */
+.check-list { display: flex; flex-direction: column; gap: 0.35rem; }
 .check-item {
-  display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.6rem 0.75rem;
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.65rem 0.75rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.1s;
   user-select: none;
 }
 .check-item:hover { background: var(--surface2); }
-.check-item.done { opacity: 0.6; }
 .check-item.done .check-label { text-decoration: line-through; color: var(--text-dim); }
 .check-box {
-  width: 20px; height: 20px; border-radius: 5px;
-  border: 2px solid var(--border); background: transparent;
+  width: 21px; height: 21px; border-radius: 6px;
+  border: 1.5px solid var(--border-strong); background: transparent;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: all 0.15s;
-  font-size: 0.7rem;
+  font-size: 0.72rem; color: #fff;
 }
 .check-item.done .check-box {
-  background: var(--accent); border-color: var(--accent); color: #111;
+  background: var(--accent); border-color: var(--accent);
 }
-.check-label { font-size: 0.85rem; }
+.check-label { font-size: 0.85rem; color: var(--text); }
 .check-target { font-size: 0.7rem; color: var(--text-dim); margin-left: auto; white-space: nowrap; }
 
-/* ── FREQUENCY DOTS ── */
-.freq-dots { display: flex; gap: 4px; margin-left: auto; }
-.freq-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--surface3); border: 1px solid var(--border);
-  cursor: pointer; transition: background 0.15s;
-}
-.freq-dot.filled { background: var(--accent); border-color: var(--accent); }
-
-/* ── STRENGTH LIFT ROWS ── */
-.lift-section { margin-bottom: 0.5rem; }
+/* ── LIFT SECTIONS ── */
+.lift-section { margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; }
+.lift-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .lift-header {
   display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 0.5rem 0.4rem;
-  cursor: pointer;
+  padding: 0.3rem 0 0.5rem;
 }
 .lift-name {
   font-family: 'Syne', sans-serif;
   font-weight: 700; font-size: 0.82rem;
-  letter-spacing: 0.02em; flex: 1;
+  letter-spacing: 0.02em; flex: 1; color: var(--text);
 }
 .pb-badge {
-  font-size: 0.65rem; background: var(--accent);
-  color: #111; padding: 1px 6px; border-radius: 20px;
-  font-weight: 700; opacity: 0; transition: opacity 0.3s;
+  font-size: 0.62rem; background: var(--accent);
+  color: #fff; padding: 2px 7px; border-radius: 20px;
+  font-weight: 600; opacity: 0; transition: opacity 0.3s;
 }
 .pb-badge.show { opacity: 1; }
-.lift-sets { display: flex; flex-direction: column; gap: 0.4rem; padding: 0 0.5rem 0.5rem; }
+.set-header {
+  display: grid; grid-template-columns: 28px 1fr 1fr 28px;
+  gap: 0.4rem; padding: 0 0 0.3rem;
+  font-size: 0.65rem; color: var(--text-dim);
+  text-align: center; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.lift-sets { display: flex; flex-direction: column; gap: 0.4rem; }
 .set-row {
   display: grid; grid-template-columns: 28px 1fr 1fr 28px;
   gap: 0.4rem; align-items: center;
@@ -197,111 +202,103 @@ nav {
 .set-num { font-size: 0.7rem; color: var(--text-dim); text-align: center; }
 .set-input {
   background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 6px; padding: 0.4rem 0.5rem;
+  border-radius: 6px; padding: 0.42rem 0.5rem;
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.82rem; color: var(--text);
+  font-size: 0.85rem; color: var(--text);
   outline: none; width: 100%; text-align: center;
   transition: border-color 0.15s;
 }
-.set-input:focus { border-color: var(--accent2); }
+.set-input:focus { border-color: var(--accent2); background: var(--surface); }
 .set-input::placeholder { color: var(--text-dim); }
 .set-del {
   width: 22px; height: 22px; border-radius: 50%;
   border: 1px solid var(--border); background: transparent;
-  color: var(--text-dim); cursor: pointer; font-size: 0.7rem;
+  color: var(--text-dim); cursor: pointer; font-size: 0.75rem;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
 }
-.set-del:hover { border-color: var(--danger); color: var(--danger); }
+.set-del:hover { border-color: var(--danger); color: var(--danger); background: #fff0f0; }
 .add-set-btn {
-  margin-top: 0.3rem;
-  padding: 0.35rem 0.7rem;
-  border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  margin-top: 0.5rem;
+  padding: 0.38rem 0.7rem;
+  border: 1.5px dashed var(--border-strong); border-radius: var(--radius-sm);
   background: transparent; color: var(--text-dim);
   font-size: 0.75rem; cursor: pointer; transition: all 0.15s;
   font-family: 'Instrument Sans', sans-serif; width: 100%;
 }
-.add-set-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-.set-header {
-  display: grid; grid-template-columns: 28px 1fr 1fr 28px;
-  gap: 0.4rem; padding: 0 0.5rem;
-  font-size: 0.65rem; color: var(--text-dim);
-  text-align: center; margin-bottom: 0.2rem;
-}
+.add-set-btn:hover { border-color: var(--accent2); color: var(--accent2); background: var(--accent2-light); }
 
 /* ── SLIDERS ── */
-.slider-list { display: flex; flex-direction: column; gap: 0.9rem; }
-.slider-item {}
+.slider-list { display: flex; flex-direction: column; gap: 1rem; }
 .slider-top {
   display: flex; justify-content: space-between;
-  align-items: baseline; margin-bottom: 0.4rem;
+  align-items: baseline; margin-bottom: 0.45rem;
 }
-.slider-label { font-size: 0.83rem; }
+.slider-label { font-size: 0.85rem; color: var(--text); }
 .slider-val {
   font-family: 'Syne', sans-serif;
   font-size: 1.1rem; font-weight: 700;
-  color: var(--accent); min-width: 24px; text-align: right;
+  color: var(--accent); min-width: 26px; text-align: right;
 }
 input[type=range] {
-  -webkit-appearance: none; width: 100%; height: 4px;
-  background: var(--surface3); border-radius: 2px; outline: none;
+  -webkit-appearance: none; width: 100%; height: 5px;
+  background: var(--surface3); border-radius: 3px; outline: none;
   cursor: pointer;
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--accent); cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(200,240,96,0.15);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
   transition: box-shadow 0.15s;
 }
 input[type=range]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 0 6px rgba(200,240,96,0.2);
+  box-shadow: 0 1px 8px rgba(45,106,45,0.35);
 }
 
-/* ── VEG INPUT ── */
+/* ── VEG ── */
 .veg-input-wrap {
-  display: flex; gap: 0.5rem; margin-bottom: 0.75rem;
+  display: flex; gap: 0.5rem; margin-bottom: 0.8rem;
 }
 .veg-input-wrap input {
   flex: 1;
   background: var(--surface2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm); padding: 0.55rem 0.8rem;
   font-family: 'Instrument Sans', sans-serif;
   font-size: 0.85rem; color: var(--text); outline: none;
   transition: border-color 0.15s;
 }
-.veg-input-wrap input:focus { border-color: var(--accent); }
+.veg-input-wrap input:focus { border-color: var(--accent); background: var(--surface); }
 .veg-input-wrap input::placeholder { color: var(--text-dim); }
 .add-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.55rem 1.1rem;
   background: var(--accent); border: none;
-  border-radius: var(--radius-sm); color: #111;
+  border-radius: var(--radius-sm); color: #fff;
   font-family: 'Syne', sans-serif; font-weight: 700;
-  font-size: 0.82rem; cursor: pointer; transition: opacity 0.15s;
+  font-size: 0.8rem; cursor: pointer; transition: opacity 0.15s;
 }
 .add-btn:hover { opacity: 0.85; }
 .veg-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .veg-tag {
   display: flex; align-items: center; gap: 0.35rem;
-  padding: 0.3rem 0.6rem; border-radius: 20px;
-  font-size: 0.75rem; font-weight: 500;
+  padding: 0.3rem 0.7rem; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 500; border: 1px solid transparent;
 }
 .veg-tag button {
   background: none; border: none; cursor: pointer;
-  color: inherit; opacity: 0.6; font-size: 0.7rem; padding: 0;
-  line-height: 1;
+  color: inherit; opacity: 0.5; font-size: 0.75rem; padding: 0; line-height: 1;
 }
 .veg-tag button:hover { opacity: 1; }
 
-/* Veg family colours */
-.vf-leafy      { background: #1e3a2a; color: #6fcf97; }
-.vf-cruciferous{ background: #2a3a1e; color: #a8d86e; }
-.vf-root       { background: #3a2a1e; color: #f4a261; }
-.vf-allium     { background: #3a1e3a; color: #d8a8f0; }
-.vf-legume     { background: #1e2a3a; color: #6ec6f4; }
-.vf-cucurbit   { background: #1e3a3a; color: #6ef4d8; }
-.vf-nightshade { background: #3a1e1e; color: #f46e6e; }
-.vf-other      { background: #2a2a2a; color: #b0b0b0; }
+/* Veg family colours — light mode */
+.vf-leafy       { background: #eafaf2; color: #1a7a45; border-color: #c0ecd6; }
+.vf-cruciferous { background: #f2f9e6; color: #4a7a10; border-color: #d0e8a0; }
+.vf-root        { background: #fdf4ec; color: #b85010; border-color: #f0caa0; }
+.vf-allium      { background: #f8f0fd; color: #7a30a8; border-color: #ddbcf0; }
+.vf-legume      { background: #edf4fd; color: #1a5a9a; border-color: #a8cef0; }
+.vf-cucurbit    { background: #edfaf8; color: #107a6a; border-color: #a0e8de; }
+.vf-nightshade  { background: #fdedef; color: #aa1a30; border-color: #f0a8b4; }
+.vf-other       { background: var(--surface2); color: var(--text-mid); border-color: var(--border); }
 
 /* ── WEEK STRIP ── */
 .week-strip {
@@ -312,134 +309,125 @@ input[type=range]::-webkit-slider-thumb:hover {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.6rem 0.3rem;
+  padding: 0.6rem 0.25rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.15s;
+  box-shadow: var(--shadow);
 }
-.week-day:hover { border-color: var(--text-dim); }
+.week-day:hover { border-color: var(--border-strong); }
 .week-day.today { border-color: var(--accent); }
-.week-day.selected { background: var(--surface2); }
+.week-day.selected { background: var(--accent-light); border-color: var(--accent); }
 .week-day .wd-name {
-  font-size: 0.62rem; color: var(--text-dim);
-  text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.58rem; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500;
 }
-.week-day .wd-date { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0.1rem 0; }
-.week-day .wd-dots { display: flex; gap: 2px; justify-content: center; flex-wrap: wrap; margin-top: 0.3rem; }
+.week-day .wd-date {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem;
+  margin: 0.15rem 0; color: var(--text);
+}
+.week-day.today .wd-date { color: var(--accent); }
+.week-day .wd-dots { display: flex; gap: 2px; justify-content: center; flex-wrap: wrap; margin-top: 0.3rem; min-height: 7px; }
 .wd-dot { width: 5px; height: 5px; border-radius: 50%; }
 
-/* ── SCORE RING ── */
-.day-score-wrap {
-  display: flex; gap: 0.75rem; flex-wrap: wrap;
-  margin-top: 0.75rem;
-}
+/* ── DAY SCORE SUMMARY ── */
+.day-score-wrap { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.9rem; }
 .score-chip {
   flex: 1; min-width: 100px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.75rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0.65rem 0.9rem;
 }
-.score-chip-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 0.3rem; }
-.score-chip-val {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.6rem; font-weight: 800;
-  line-height: 1;
-}
+.score-chip-label { font-size: 0.68rem; color: var(--text-dim); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.score-chip-val { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 800; line-height: 1; }
 
-/* ── WEEKLY SUMMARY ── */
+/* ── SUMMARY GRID ── */
 .summary-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.75rem; margin-bottom: 1.25rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.7rem; margin-bottom: 1.1rem;
 }
 .summary-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 1rem;
+  padding: 1rem; box-shadow: var(--shadow);
 }
-.summary-card .sc-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 2rem; font-weight: 800; line-height: 1;
-}
-.summary-card .sc-label { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.2rem; }
-.summary-card .sc-bar {
-  height: 3px; background: var(--surface3);
-  border-radius: 2px; margin-top: 0.7rem; overflow: hidden;
-}
+.summary-card .sc-num { font-family: 'Syne', sans-serif; font-size: 2.1rem; font-weight: 800; line-height: 1; }
+.summary-card .sc-label { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem; }
+.summary-card .sc-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-top: 0.8rem; overflow: hidden; }
 .summary-card .sc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
 
 /* ── VEG BREAKDOWN ── */
-.veg-breakdown { }
 .veg-family-row {
   display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.45rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid var(--border);
-  font-size: 0.82rem;
+  font-size: 0.83rem;
 }
 .veg-family-row:last-child { border-bottom: none; }
-.vf-name { flex: 1; }
-.vf-count { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; min-width: 24px; text-align: right; }
-.vf-bar-wrap { flex: 2; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
-.vf-bar-fill { height: 100%; border-radius: 2px; }
+.vf-name { flex: 1; font-weight: 500; }
+.vf-count { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; min-width: 26px; text-align: right; }
+.vf-bar-wrap { flex: 2; height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+.vf-bar-fill { height: 100%; border-radius: 3px; }
 
 /* ── SUGGESTIONS ── */
 .suggestion-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .suggestion-item {
-  display: flex; align-items: flex-start; gap: 0.6rem;
-  padding: 0.6rem 0.75rem;
+  display: flex; align-items: flex-start; gap: 0.65rem;
+  padding: 0.65rem 0.8rem;
   background: var(--surface2);
   border-radius: var(--radius-sm);
-  font-size: 0.8rem; line-height: 1.45;
+  font-size: 0.82rem; line-height: 1.5; color: var(--text);
 }
-.suggestion-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 0.05rem; }
+.suggestion-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 0.1rem; }
 
 /* ── TREND CHART ── */
-.trend-chart { position: relative; height: 120px; margin: 0.5rem 0; }
+.trend-chart { position: relative; height: 130px; margin: 0.5rem 0; }
 .trend-svg { width: 100%; height: 100%; overflow: visible; }
 
-/* ── TABS inside card ── */
-.inner-tabs { display: flex; gap: 2px; margin-bottom: 1rem; }
-.inner-tab {
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px; border: none;
-  background: var(--surface2); color: var(--text-dim);
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.75rem; cursor: pointer; transition: all 0.15s;
-}
-.inner-tab.active { background: var(--accent); color: #111; font-weight: 500; }
-
 /* ── PB TABLE ── */
-.pb-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.pb-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
 .pb-table th {
-  text-align: left; padding: 0.4rem 0.5rem;
+  text-align: left; padding: 0.45rem 0.6rem;
   color: var(--text-dim); font-weight: 500;
-  font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
   border-bottom: 1px solid var(--border);
 }
-.pb-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--surface2); }
+.pb-table td { padding: 0.6rem 0.6rem; border-bottom: 1px solid var(--surface2); }
 .pb-table tr:last-child td { border-bottom: none; }
-.pb-val { font-family: 'Syne', sans-serif; font-weight: 700; }
+.pb-val { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); font-size: 1rem; }
+
+/* ── WEEK VIEW CHIPS ── */
+.mini-chip {
+  padding: 0.25rem 0.65rem; border-radius: 20px;
+  font-size: 0.73rem; border: 1px solid;
+  display: inline-block;
+}
+.mini-chip.done { background: var(--accent-light); color: var(--accent); border-color: #b8ddb8; }
+.mini-chip.undone { background: transparent; color: var(--text-dim); border-color: var(--border); }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 600px) {
-  .week-strip { gap: 0.25rem; }
-  .week-day .wd-date { font-size: 0.82rem; }
+  .week-strip { gap: 0.2rem; }
+  .week-day { padding: 0.5rem 0.15rem; }
+  .week-day .wd-date { font-size: 0.88rem; }
   nav { padding: 0 0.75rem; }
-  .nav-tab { padding: 0.38rem 0.6rem; font-size: 0.72rem; }
+  .nav-tab { padding: 0.38rem 0.65rem; font-size: 0.73rem; }
   .view { padding: 1rem 0.75rem; }
+  .summary-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ── ANIMATIONS ── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.card { animation: fadeUp 0.25s ease both; }
+.card { animation: fadeUp 0.22s ease both; }
 .card:nth-child(2) { animation-delay: 0.04s; }
 .card:nth-child(3) { animation-delay: 0.08s; }
 .card:nth-child(4) { animation-delay: 0.12s; }
 .card:nth-child(5) { animation-delay: 0.16s; }
+.card:nth-child(6) { animation-delay: 0.20s; }
+.card:nth-child(7) { animation-delay: 0.24s; }
 </style>
 </head>
 <body>
@@ -447,19 +435,18 @@ input[type=range]::-webkit-slider-thumb:hover {
 <nav>
   <div class="nav-logo">DAILY</div>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showView('today')">Today</button>
-    <button class="nav-tab" onclick="showView('week')">Week</button>
-    <button class="nav-tab" onclick="showView('summary')">Summary</button>
-    <button class="nav-tab" onclick="showView('trends')">Trends</button>
+    <button class="nav-tab active" data-view="today" onclick="showView('today',this)">Today</button>
+    <button class="nav-tab" data-view="week" onclick="showView('week',this)">Week</button>
+    <button class="nav-tab" data-view="summary" onclick="showView('summary',this)">Summary</button>
+    <button class="nav-tab" data-view="trends" onclick="showView('trends',this)">Trends</button>
   </div>
 </nav>
 
-<!-- ══════════════ TODAY VIEW ══════════════ -->
+<!-- ══════════ TODAY ══════════ -->
 <div class="view active" id="view-today">
-
   <div class="day-header">
     <div>
-      <div class="day-title" id="today-title">Loading…</div>
+      <div class="day-title" id="today-title">—</div>
       <div class="day-sub" id="today-sub"></div>
     </div>
     <div class="day-nav">
@@ -469,33 +456,31 @@ input[type=range]::-webkit-slider-thumb:hover {
     </div>
   </div>
 
-  <!-- WEEK STRIP -->
   <div class="week-strip" id="week-strip"></div>
 
   <!-- STRENGTH -->
-  <div class="card" id="card-strength">
+  <div class="card">
     <div class="card-header">
-      <div class="card-icon" style="background:#1e2e1e">💪</div>
+      <div class="card-icon" style="background:#eaf4ea">💪</div>
       <div class="card-title">Strength</div>
       <div class="card-subtitle" id="strength-sub">0/3 this week</div>
     </div>
     <div class="progress-row">
-      <span>Weekly target: 3</span>
+      <span>Weekly target: 3 sessions</span>
       <div class="progress-track"><div class="progress-fill" id="strength-progress" style="width:0%"></div></div>
       <span id="strength-pct">0%</span>
     </div>
     <div id="lifts-container"></div>
-    <!-- session checkbox -->
-    <div class="check-item" id="strength-check" onclick="toggleStrength()" style="margin-top:0.5rem; border-top:1px solid var(--border); padding-top:0.75rem">
+    <div class="check-item" id="strength-check" onclick="toggleStrength()" style="margin-top:0.75rem;border-top:1px solid var(--border);padding-top:0.75rem">
       <div class="check-box" id="strength-check-box"></div>
-      <div class="check-label">Mark session complete</div>
+      <div class="check-label" style="font-weight:500">Mark session complete</div>
     </div>
   </div>
 
   <!-- CORE & FLEX -->
   <div class="card">
     <div class="card-header">
-      <div class="card-icon" style="background:#1e1e3a">🧘</div>
+      <div class="card-icon" style="background:#eeeaf8">🧘</div>
       <div class="card-title">Core & Flexibility</div>
     </div>
     <div class="check-list" id="core-list"></div>
@@ -504,16 +489,16 @@ input[type=range]::-webkit-slider-thumb:hover {
   <!-- FITNESS -->
   <div class="card">
     <div class="card-header">
-      <div class="card-icon" style="background:#2a1e1e">🏃</div>
+      <div class="card-icon" style="background:#fdf0e4">🏃</div>
       <div class="card-title">Fitness</div>
     </div>
     <div class="check-list" id="fitness-list"></div>
   </div>
 
-  <!-- HOT & COLD + MOBILITY -->
+  <!-- WELLNESS -->
   <div class="card">
     <div class="card-header">
-      <div class="card-icon" style="background:#1a2a2a">🧊</div>
+      <div class="card-icon" style="background:#e8f4f8">🧊</div>
       <div class="card-title">Wellness</div>
     </div>
     <div class="check-list" id="wellness-list"></div>
@@ -522,16 +507,16 @@ input[type=range]::-webkit-slider-thumb:hover {
   <!-- GRATITUDE -->
   <div class="card">
     <div class="card-header">
-      <div class="card-icon" style="background:#2a1e2a">🙏</div>
+      <div class="card-icon" style="background:#f8eaf4">🙏</div>
       <div class="card-title">Morning Gratitude</div>
     </div>
     <div class="check-list" id="gratitude-list"></div>
   </div>
 
-  <!-- DAY SCORES (weekdays only) -->
+  <!-- DAY SCORES -->
   <div class="card" id="card-scores">
     <div class="card-header">
-      <div class="card-icon" style="background:#2a2a1e">⭐</div>
+      <div class="card-icon" style="background:#faf8e4">⭐</div>
       <div class="card-title">Day Quality</div>
       <div class="card-subtitle">Weekdays only</div>
     </div>
@@ -542,20 +527,19 @@ input[type=range]::-webkit-slider-thumb:hover {
   <!-- VEGETABLES -->
   <div class="card">
     <div class="card-header">
-      <div class="card-icon" style="background:#1e3a1e">🥦</div>
+      <div class="card-icon" style="background:#eaf8ea">🥦</div>
       <div class="card-title">Vegetables</div>
       <div class="card-subtitle" id="veg-count-label">0 portions</div>
     </div>
     <div class="veg-input-wrap">
-      <input type="text" id="veg-input" placeholder="e.g. spinach, broccoli…" onkeydown="if(event.key==='Enter')addVeg()">
+      <input type="text" id="veg-input" placeholder="e.g. spinach, broccoli, carrot…" onkeydown="if(event.key==='Enter')addVeg()">
       <button class="add-btn" onclick="addVeg()">Add</button>
     </div>
     <div class="veg-tags" id="veg-tags"></div>
   </div>
-
 </div>
 
-<!-- ══════════════ WEEK VIEW ══════════════ -->
+<!-- ══════════ WEEK ══════════ -->
 <div class="view" id="view-week">
   <div class="day-header">
     <div>
@@ -566,7 +550,7 @@ input[type=range]::-webkit-slider-thumb:hover {
   <div id="week-view-content"></div>
 </div>
 
-<!-- ══════════════ SUMMARY VIEW ══════════════ -->
+<!-- ══════════ SUMMARY ══════════ -->
 <div class="view" id="view-summary">
   <div class="day-header">
     <div>
@@ -582,7 +566,7 @@ input[type=range]::-webkit-slider-thumb:hover {
   <div id="summary-content"></div>
 </div>
 
-<!-- ══════════════ TRENDS VIEW ══════════════ -->
+<!-- ══════════ TRENDS ══════════ -->
 <div class="view" id="view-trends">
   <div class="day-header">
     <div>
@@ -593,64 +577,45 @@ input[type=range]::-webkit-slider-thumb:hover {
 </div>
 
 <script>
-// ══════════════════════════════════════════
-//  DATA SCHEMA & STORAGE
-// ══════════════════════════════════════════
+// ── STORAGE ──────────────────────────────────────────────────────────────
 const STORE = 'daily_tracker_v1';
 let db = {};
-try { db = JSON.parse(localStorage.getItem(STORE)) || {}; } catch(e) { db = {}; }
+try { db = JSON.parse(localStorage.getItem(STORE)) || {}; } catch(e) {}
 function save() { localStorage.setItem(STORE, JSON.stringify(db)); }
 function dayKey(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-function dayData(key) {
-  if (!db[key]) db[key] = {};
-  return db[key];
-}
+function dayData(key) { if (!db[key]) db[key] = {}; return db[key]; }
 
-// ── CONFIG ──────────────────────────────
+// ── CONFIG ───────────────────────────────────────────────────────────────
 const LIFTS = ['Deadlift','Squat','Bench','Press'];
-
-const CORE_ITEMS = [
-  { id:'stretch', label:'Stretch', target:'4× / week' },
-  { id:'core',    label:'Core',    target:'2× / week' },
-];
-const FITNESS_ITEMS = [
-  { id:'cardio', label:'Cardio',  target:'3× / week' },
-  { id:'sprint', label:'Sprint',  target:'1× / week' },
-];
-const WELLNESS_ITEMS = [
-  { id:'hotcold',  label:'Hot & Cold',        target:'daily' },
-  { id:'mobility', label:'Morning Mobility',  target:'5× / week' },
-];
-const GRATITUDE_ITEMS = [
-  { id:'reflection', label:'Personal reflection' },
-  { id:'thankyou',   label:'Written thank you' },
-];
+const CORE_ITEMS     = [{ id:'stretch', label:'Stretch', target:'4× / week' }, { id:'core', label:'Core', target:'2× / week' }];
+const FITNESS_ITEMS  = [{ id:'cardio', label:'Cardio', target:'3× / week' }, { id:'sprint', label:'Sprint', target:'1× / week' }];
+const WELLNESS_ITEMS = [{ id:'hotcold', label:'Hot & Cold', target:'daily' }, { id:'mobility', label:'Morning Mobility', target:'5× / week' }];
+const GRATITUDE_ITEMS = [{ id:'reflection', label:'Personal reflection' }, { id:'thankyou', label:'Written thank you' }];
 const SCORE_ITEMS = [
-  { id:'goals',      label:'Set clear goals' },
-  { id:'achieve',    label:'Achieved them' },
-  { id:'meaning',    label:'Found meaning' },
-  { id:'happy',      label:'Was happy' },
-  { id:'relations',  label:'Built relationships' },
-  { id:'engaged',    label:'Fully engaged' },
+  { id:'goals',     label:'Set clear goals' },
+  { id:'achieve',   label:'Achieved them' },
+  { id:'meaning',   label:'Found meaning' },
+  { id:'happy',     label:'Was happy' },
+  { id:'relations', label:'Built relationships' },
+  { id:'engaged',   label:'Fully engaged' },
 ];
 
-// Vegetable family classifier
 const VEG_FAMILIES = {
-  leafy:       { label:'Leafy Greens',   color:'#6fcf97', bg:'#1e3a2a',
+  leafy:       { label:'Leafy Greens',   color:'#1a7a45', barColor:'#3aaa65',
     words:['spinach','kale','lettuce','rocket','arugula','chard','watercress','pak choi','bok choy','cabbage','spring greens','collard','endive','radicchio','chicory'] },
-  cruciferous: { label:'Cruciferous',    color:'#a8d86e', bg:'#2a3a1e',
+  cruciferous: { label:'Cruciferous',    color:'#4a7a10', barColor:'#70aa30',
     words:['broccoli','cauliflower','brussels','sprout','kohlrabi','radish','turnip','swede','rutabaga'] },
-  root:        { label:'Root',           color:'#f4a261', bg:'#3a2a1e',
+  root:        { label:'Root Veg',       color:'#b85010', barColor:'#e07030',
     words:['carrot','parsnip','beetroot','beet','sweet potato','potato','celeriac','yam','ginger','turmeric'] },
-  allium:      { label:'Alliums',        color:'#d8a8f0', bg:'#3a1e3a',
+  allium:      { label:'Alliums',        color:'#7a30a8', barColor:'#aa60d8',
     words:['onion','garlic','leek','shallot','chive','spring onion','scallion'] },
-  legume:      { label:'Legumes',        color:'#6ec6f4', bg:'#1e2a3a',
+  legume:      { label:'Legumes',        color:'#1a5a9a', barColor:'#3080cc',
     words:['pea','bean','lentil','chickpea','edamame','broad bean','runner bean','green bean','mangetout','snap pea'] },
-  cucurbit:    { label:'Cucurbits',      color:'#6ef4d8', bg:'#1e3a3a',
+  cucurbit:    { label:'Cucurbits',      color:'#107a6a', barColor:'#20aa90',
     words:['courgette','zucchini','cucumber','pumpkin','squash','marrow','gourd'] },
-  nightshade:  { label:'Nightshades',    color:'#f46e6e', bg:'#3a1e1e',
+  nightshade:  { label:'Nightshades',    color:'#aa1a30', barColor:'#dd3050',
     words:['tomato','pepper','aubergine','eggplant','chilli','paprika','capsicum'] },
 };
 function classifyVeg(name) {
@@ -661,119 +626,94 @@ function classifyVeg(name) {
   return 'other';
 }
 
-// ══════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════
-let viewDate = new Date();  // date currently shown in today tab
+// ── HELPERS ──────────────────────────────────────────────────────────────
+let viewDate = new Date();
 let currentWeekOffset = 0;
-
 function today() { const d = new Date(); d.setHours(0,0,0,0); return d; }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
-function weekStart(d) { const r = new Date(d); r.setDate(r.getDate() - r.getDay() + 1); r.setHours(0,0,0,0); return r; }
+function weekStart(d) { const r = new Date(d); r.setDate(r.getDate() - ((r.getDay()+6)%7)); r.setHours(0,0,0,0); return r; } // Mon-based
 function sameDay(a,b) { return dayKey(a) === dayKey(b); }
-function isWeekday(d) { return d.getDay() >= 1 && d.getDay() <= 5; }
-const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function isWeekday(d) { return d.getDay()>=1 && d.getDay()<=5; }
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// ══════════════════════════════════════════
-//  VIEW SWITCHING
-// ══════════════════════════════════════════
-function showView(name) {
+// ── VIEW SWITCHING ───────────────────────────────────────────────────────
+function showView(name, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'week') renderWeekView();
+  if (btn) btn.classList.add('active');
+  if (name === 'week')    renderWeekView();
   if (name === 'summary') renderSummary();
-  if (name === 'trends') renderTrends();
+  if (name === 'trends')  renderTrends();
 }
 
-// ══════════════════════════════════════════
-//  TODAY VIEW
-// ══════════════════════════════════════════
+// ── TODAY ─────────────────────────────────────────────────────────────────
 function offsetDay(n) { viewDate = addDays(viewDate, n); renderToday(); }
 function goToday()    { viewDate = today(); renderToday(); }
 
 function renderToday() {
-  const d = viewDate;
-  const key = dayKey(d);
+  const d    = viewDate;
+  const key  = dayKey(d);
   const data = dayData(key);
-  const isToday = sameDay(d, today());
-  const weekday = isWeekday(d);
+  const isToday  = sameDay(d, today());
+  const weekday  = isWeekday(d);
 
-  // Header
   document.getElementById('today-title').innerHTML =
     `${DAYS[d.getDay()]}, ${d.getDate()} <span>${MONTHS[d.getMonth()]}</span>`;
-  document.getElementById('today-sub').textContent =
-    isToday ? 'Today' : `${Math.abs(Math.round((d - today())/(1000*60*60*24)))} days ${d < today() ? 'ago' : 'ahead'}`;
+  document.getElementById('today-sub').textContent = isToday
+    ? 'Today'
+    : `${Math.abs(Math.round((d - today())/(864e5)))} days ${d < today() ? 'ago' : 'ahead'}`;
 
-  // Week strip
   renderWeekStrip();
 
-  // Strength progress
+  // Strength weekly count
   const ws = weekStart(d);
-  let strengthCount = 0;
-  for (let i=0;i<7;i++) { const dk = dayKey(addDays(ws,i)); if (db[dk]?.strength_done) strengthCount++; }
-  const spct = Math.min(100, Math.round(strengthCount/3*100));
-  document.getElementById('strength-sub').textContent = `${strengthCount}/3 this week`;
+  let sCount = 0;
+  for (let i=0;i<7;i++) { if (db[dayKey(addDays(ws,i))]?.strength_done) sCount++; }
+  const spct = Math.min(100, Math.round(sCount/3*100));
+  document.getElementById('strength-sub').textContent = `${sCount}/3 this week`;
   document.getElementById('strength-progress').style.width = spct + '%';
   document.getElementById('strength-pct').textContent = spct + '%';
 
-  // Strength check
+  // Strength session tick
   const sdone = data.strength_done || false;
-  const scb = document.getElementById('strength-check-box');
-  const sci = document.getElementById('strength-check');
-  scb.textContent = sdone ? '✓' : '';
-  sci.className = 'check-item' + (sdone ? ' done' : '');
+  document.getElementById('strength-check-box').textContent = sdone ? '✓' : '';
+  document.getElementById('strength-check').className = 'check-item' + (sdone ? ' done' : '');
 
-  // Lifts
   renderLifts(key);
-
-  // Core & flex
-  renderCheckList('core-list', CORE_ITEMS, key, 'core');
-  // Fitness
-  renderCheckList('fitness-list', FITNESS_ITEMS, key, 'fitness');
-  // Wellness
+  renderCheckList('core-list',     CORE_ITEMS,     key, 'core');
+  renderCheckList('fitness-list',  FITNESS_ITEMS,  key, 'fitness');
   renderCheckList('wellness-list', WELLNESS_ITEMS, key, 'wellness');
-  // Gratitude
-  renderCheckList('gratitude-list', GRATITUDE_ITEMS, key, 'gratitude');
+  renderCheckList('gratitude-list',GRATITUDE_ITEMS,key, 'gratitude');
 
-  // Scores
   const cardScores = document.getElementById('card-scores');
-  if (weekday) {
-    cardScores.style.display = '';
-    renderScores(key);
-  } else {
-    cardScores.style.display = 'none';
-  }
+  if (weekday) { cardScores.style.display = ''; renderScores(key); }
+  else { cardScores.style.display = 'none'; }
 
-  // Veg
   renderVeg(key);
 }
 
-// ── WEEK STRIP ─────────────────────────
+// Week strip (Mon–Sun)
 function renderWeekStrip() {
-  const ws = weekStart(viewDate);
+  const ws    = weekStart(viewDate);
   const strip = document.getElementById('week-strip');
   strip.innerHTML = '';
-  for (let i=0; i<7; i++) {
-    const d = addDays(ws, i);
-    const key = dayKey(d);
+  for (let i=0;i<7;i++) {
+    const d    = addDays(ws, i);
+    const key  = dayKey(d);
     const data = db[key] || {};
     const isSelected = sameDay(d, viewDate);
-    const isTod = sameDay(d, today());
-
-    // dots: each category done
+    const isTod      = sameDay(d, today());
     const dots = [];
-    if (data.strength_done) dots.push(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#C8F060');
-    if ((data.core || {}).stretch) dots.push('#60C8F0');
-    if ((data.fitness || {}).cardio) dots.push('#F0A060');
-    if ((data.wellness || {}).hotcold) dots.push('#F06080');
+    if (data.strength_done) dots.push('#2D6A2D');
+    if ((data.core||{}).stretch)   dots.push('#7a30a8');
+    if ((data.fitness||{}).cardio) dots.push('#C4651A');
+    if ((data.wellness||{}).hotcold) dots.push('#1A5C8A');
 
     const el = document.createElement('div');
-    el.className = 'week-day' + (isTod ? ' today' : '') + (isSelected ? ' selected' : '');
-    el.innerHTML = `
-      <div class="wd-name">${DAYS[d.getDay()]}</div>
+    el.className = 'week-day' + (isTod?' today':'') + (isSelected?' selected':'');
+    el.innerHTML = `<div class="wd-name">${DAYS[d.getDay()]}</div>
       <div class="wd-date">${d.getDate()}</div>
       <div class="wd-dots">${dots.map(c=>`<div class="wd-dot" style="background:${c}"></div>`).join('')}</div>`;
     el.onclick = () => { viewDate = d; renderToday(); };
@@ -781,13 +721,12 @@ function renderWeekStrip() {
   }
 }
 
-// ── CHECK LISTS ────────────────────────
+// Checklist
 function renderCheckList(containerId, items, key, section) {
   const data = dayData(key);
   if (!data[section]) data[section] = {};
-  const container = document.getElementById(containerId);
-  container.innerHTML = items.map(item => {
-    const done = data[section][item.id] || false;
+  document.getElementById(containerId).innerHTML = items.map(item => {
+    const done = !!data[section][item.id];
     return `<div class="check-item${done?' done':''}" onclick="toggleCheck('${key}','${section}','${item.id}')">
       <div class="check-box">${done?'✓':''}</div>
       <div class="check-label">${item.label}</div>
@@ -802,37 +741,36 @@ function toggleCheck(key, section, id) {
   save(); renderToday();
 }
 function toggleStrength() {
-  const key = dayKey(viewDate);
+  const key  = dayKey(viewDate);
   const data = dayData(key);
   data.strength_done = !data.strength_done;
   save(); renderToday();
 }
 
-// ── LIFTS ──────────────────────────────
+// Lifts
 function renderLifts(key) {
   const data = dayData(key);
   if (!data.lifts) data.lifts = {};
-  const container = document.getElementById('lifts-container');
-  container.innerHTML = LIFTS.map(lift => {
+  document.getElementById('lifts-container').innerHTML = LIFTS.map(lift => {
     const lkey = lift.toLowerCase();
     if (!data.lifts[lkey]) data.lifts[lkey] = [];
     const sets = data.lifts[lkey];
     const pb = getPB(lift);
     const maxToday = sets.reduce((m,s)=>Math.max(m, parseFloat(s.weight)||0), 0);
-    const isNewPB = maxToday > 0 && pb > 0 && maxToday >= pb;
+    const isNewPB  = maxToday > 0 && pb > 0 && maxToday >= pb;
     return `<div class="lift-section">
       <div class="lift-header">
         <div class="lift-name">${lift}</div>
-        <div class="pb-badge${isNewPB?' show':''}">PB ${pb}kg</div>
+        ${pb > 0 ? `<div class="pb-badge${isNewPB?' show':''}">PB ${pb}kg</div>` : ''}
       </div>
-      <div class="set-header"><span>Set</span><span>Reps</span><span>Weight (kg)</span><span></span></div>
-      <div class="lift-sets" id="sets-${lkey}">
+      ${sets.length ? `<div class="set-header"><span>Set</span><span>Reps</span><span>kg</span><span></span></div>` : ''}
+      <div class="lift-sets">
         ${sets.map((s,i)=>`
           <div class="set-row">
             <div class="set-num">${i+1}</div>
-            <input class="set-input" type="number" placeholder="—" value="${s.reps||''}"
+            <input class="set-input" type="number" min="1" placeholder="—" value="${s.reps||''}"
               onchange="updateSet('${key}','${lkey}',${i},'reps',this.value)">
-            <input class="set-input" type="number" placeholder="—" value="${s.weight||''}"
+            <input class="set-input" type="number" min="0" placeholder="—" value="${s.weight||''}"
               onchange="updateSet('${key}','${lkey}',${i},'weight',this.value)">
             <button class="set-del" onclick="delSet('${key}','${lkey}',${i})">×</button>
           </div>`).join('')}
@@ -849,442 +787,343 @@ function addSet(key, lkey) {
   save(); renderLifts(key);
 }
 function delSet(key, lkey, idx) {
-  const data = dayData(key);
-  data.lifts[lkey].splice(idx, 1);
+  dayData(key).lifts[lkey].splice(idx,1);
   save(); renderLifts(key);
 }
 function updateSet(key, lkey, idx, field, val) {
-  const data = dayData(key);
-  data.lifts[lkey][idx][field] = val;
+  dayData(key).lifts[lkey][idx][field] = val;
   save();
-  // Check PB
-  const maxW = data.lifts[lkey].reduce((m,s)=>Math.max(m,parseFloat(s.weight)||0),0);
+  const maxW = dayData(key).lifts[lkey].reduce((m,s)=>Math.max(m,parseFloat(s.weight)||0),0);
   updatePB(lkey.charAt(0).toUpperCase()+lkey.slice(1), maxW);
   renderLifts(key);
 }
-function getPB(lift) {
-  if (!db._pbs) return 0;
-  return db._pbs[lift.toLowerCase()] || 0;
-}
+function getPB(lift) { return (db._pbs||{})[lift.toLowerCase()] || 0; }
 function updatePB(lift, weight) {
   if (!db._pbs) db._pbs = {};
-  const lkey = lift.toLowerCase();
-  if (weight > (db._pbs[lkey] || 0)) {
-    db._pbs[lkey] = weight;
-    save();
-  }
+  if (weight > (db._pbs[lift.toLowerCase()]||0)) { db._pbs[lift.toLowerCase()] = weight; save(); }
 }
 
-// ── SCORES ─────────────────────────────
+// Scores
 function renderScores(key) {
   const data = dayData(key);
   if (!data.scores) data.scores = {};
-  const list = document.getElementById('scores-list');
-  list.innerHTML = SCORE_ITEMS.map(item => {
-    const val = data.scores[item.id] || 5;
+  document.getElementById('scores-list').innerHTML = SCORE_ITEMS.map(item => {
+    const val = data.scores[item.id] !== undefined ? data.scores[item.id] : 5;
     return `<div class="slider-item">
       <div class="slider-top">
         <div class="slider-label">${item.label}</div>
         <div class="slider-val" id="sv-${item.id}">${val}</div>
       </div>
       <input type="range" min="1" max="10" value="${val}"
-        oninput="updateScore('${key}','${item.id}',this.value)"
-        onchange="updateScore('${key}','${item.id}',this.value)">
+        oninput="updateScore('${key}','${item.id}',this.value)">
     </div>`;
   }).join('');
-
   renderScoresSummary(key);
 }
 function updateScore(key, id, val) {
   const data = dayData(key);
   if (!data.scores) data.scores = {};
   data.scores[id] = Number(val);
-  document.getElementById('sv-' + id).textContent = val;
-  save();
-  renderScoresSummary(key);
+  const el = document.getElementById('sv-'+id);
+  if (el) el.textContent = val;
+  save(); renderScoresSummary(key);
 }
 function renderScoresSummary(key) {
-  const data = dayData(key);
-  const scores = data.scores || {};
-  const vals = SCORE_ITEMS.map(i => scores[i.id] || 5);
-  const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
-  const colors = { low:'#F06080', mid:'#F0A060', high:'#C8F060' };
-  const col = avg < 4 ? colors.low : avg < 7 ? colors.mid : colors.high;
+  const scores = dayData(key).scores || {};
+  const vals = SCORE_ITEMS.map(i => scores[i.id] !== undefined ? scores[i.id] : 5);
+  const avg  = vals.reduce((a,b)=>a+b,0) / vals.length;
+  const col  = avg < 4 ? '#B83050' : avg < 7 ? '#C4651A' : '#2D6A2D';
   document.getElementById('scores-summary').innerHTML =
-    `<div class="score-chip" style="border-color:${col}20">
+    `<div class="score-chip" style="border-color:${col}40">
       <div class="score-chip-label">Day average</div>
       <div class="score-chip-val" style="color:${col}">${avg.toFixed(1)}</div>
     </div>`;
 }
 
-// ── VEGETABLES ─────────────────────────
+// Vegetables
 function addVeg() {
   const input = document.getElementById('veg-input');
-  const val = input.value.trim();
+  const val   = input.value.trim();
   if (!val) return;
-  const key = dayKey(viewDate);
+  const key  = dayKey(viewDate);
   const data = dayData(key);
   if (!data.veg) data.veg = [];
   val.split(',').map(v=>v.trim()).filter(Boolean).forEach(v => {
     data.veg.push({ name: v, family: classifyVeg(v) });
   });
-  save();
-  input.value = '';
-  renderVeg(key);
-  updateVegCountLabel(key);
+  save(); input.value = ''; renderVeg(key);
 }
 function removeVeg(key, idx) {
-  const data = dayData(key);
-  data.veg.splice(idx, 1);
-  save(); renderVeg(key); updateVegCountLabel(key);
+  dayData(key).veg.splice(idx,1);
+  save(); renderVeg(key);
 }
 function renderVeg(key) {
-  const data = dayData(key);
-  const vegs = data.veg || [];
-  const container = document.getElementById('veg-tags');
-  container.innerHTML = vegs.map((v,i) => {
-    const fam = VEG_FAMILIES[v.family];
-    const bg  = fam ? fam.bg    : '#2a2a2a';
-    const col = fam ? fam.color : '#b0b0b0';
-    return `<div class="veg-tag" style="background:${bg};color:${col}">
-      ${v.name}
-      <button onclick="removeVeg('${key}',${i})">×</button>
-    </div>`;
+  const vegs = dayData(key).veg || [];
+  document.getElementById('veg-tags').innerHTML = vegs.map((v,i) => {
+    const cls = 'vf-' + v.family;
+    return `<div class="veg-tag ${cls}">${v.name}<button onclick="removeVeg('${key}',${i})">×</button></div>`;
   }).join('');
-  updateVegCountLabel(key);
-}
-function updateVegCountLabel(key) {
-  const data = dayData(key);
-  const n = (data.veg || []).length;
-  document.getElementById('veg-count-label').textContent = `${n} portion${n!==1?'s':''}`;
+  document.getElementById('veg-count-label').textContent = `${vegs.length} portion${vegs.length!==1?'s':''}`;
 }
 
-// ══════════════════════════════════════════
-//  WEEK VIEW
-// ══════════════════════════════════════════
+// ── WEEK VIEW ─────────────────────────────────────────────────────────────
 function renderWeekView() {
   const ws = weekStart(today());
-  const label = `${ws.getDate()} ${MONTHS[ws.getMonth()]} – ${addDays(ws,6).getDate()} ${MONTHS[addDays(ws,6).getMonth()]}`;
-  document.getElementById('week-range-label').textContent = label;
-
+  document.getElementById('week-range-label').textContent =
+    `${ws.getDate()} ${MONTHS[ws.getMonth()]} – ${addDays(ws,6).getDate()} ${MONTHS[addDays(ws,6).getMonth()]}`;
   let html = '';
-  for (let i=0; i<7; i++) {
-    const d = addDays(ws, i);
-    const key = dayKey(d);
+  for (let i=0;i<7;i++) {
+    const d    = addDays(ws, i);
+    const key  = dayKey(d);
     const data = db[key] || {};
     const scores = data.scores || {};
     const avgScore = isWeekday(d) && Object.keys(scores).length
-      ? (Object.values(scores).reduce((a,b)=>a+b,0) / Object.values(scores).length).toFixed(1)
-      : null;
-    const vegs = (data.veg || []).length;
-    const isToday = sameDay(d, today());
-
-    html += `<div class="card" style="margin-bottom:0.6rem;${isToday?'border-color:var(--accent)':''}">
-      <div class="card-header" style="margin-bottom:0.5rem">
-        <div class="card-title">${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}${isToday?' · Today':''}</div>
+      ? (Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length).toFixed(1) : null;
+    const vegs  = (data.veg||[]).length;
+    const isTod = sameDay(d, today());
+    html += `<div class="card" style="${isTod?'border-color:var(--accent);':''}">
+      <div class="card-header" style="margin-bottom:0.6rem">
+        <div class="card-title">${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}${isTod?' · Today':''}</div>
         ${avgScore ? `<div class="card-subtitle">Day score: ${avgScore}/10</div>` : ''}
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;font-size:0.75rem;">
-        ${miniChip('💪 Strength', data.strength_done)}
-        ${miniChip('🧘 Stretch', (data.core||{}).stretch)}
-        ${miniChip('⚡ Core', (data.core||{}).core)}
-        ${miniChip('🏃 Cardio', (data.fitness||{}).cardio)}
-        ${miniChip('🔥 Sprint', (data.fitness||{}).sprint)}
-        ${miniChip('🧊 Hot/Cold', (data.wellness||{}).hotcold)}
-        ${miniChip('🌅 Mobility', (data.wellness||{}).mobility)}
-        ${miniChip('🙏 Reflection', (data.gratitude||{}).reflection)}
-        ${miniChip('💌 Thank you', (data.gratitude||{}).thankyou)}
-        ${vegs > 0 ? `<span style="padding:0.25rem 0.6rem;border-radius:20px;background:var(--surface2);color:var(--accent)">🥦 ${vegs} portions</span>` : ''}
+      <div style="display:flex;flex-wrap:wrap;gap:0.35rem">
+        ${chip('💪 Strength', data.strength_done)}
+        ${chip('🧘 Stretch',  (data.core||{}).stretch)}
+        ${chip('⚡ Core',     (data.core||{}).core)}
+        ${chip('🏃 Cardio',   (data.fitness||{}).cardio)}
+        ${chip('🔥 Sprint',   (data.fitness||{}).sprint)}
+        ${chip('🧊 Hot/Cold', (data.wellness||{}).hotcold)}
+        ${chip('🌅 Mobility', (data.wellness||{}).mobility)}
+        ${chip('🙏 Reflection',(data.gratitude||{}).reflection)}
+        ${chip('💌 Thank you',(data.gratitude||{}).thankyou)}
+        ${vegs ? `<span class="mini-chip done">🥦 ${vegs} portions</span>` : ''}
       </div>
     </div>`;
   }
   document.getElementById('week-view-content').innerHTML = html;
 }
-function miniChip(label, done) {
-  const bg  = done ? 'var(--surface3)' : 'transparent';
-  const col = done ? 'var(--text)'     : 'var(--text-dim)';
-  const bdr = done ? 'var(--border)'   : 'var(--surface2)';
-  return `<span style="padding:0.25rem 0.6rem;border-radius:20px;background:${bg};color:${col};border:1px solid ${bdr}">${label}</span>`;
+function chip(label, done) {
+  return `<span class="mini-chip ${done?'done':'undone'}">${label}</span>`;
 }
 
-// ══════════════════════════════════════════
-//  SUMMARY VIEW
-// ══════════════════════════════════════════
+// ── SUMMARY ───────────────────────────────────────────────────────────────
 function offsetWeek(n) { currentWeekOffset += n; renderSummary(); }
 
 function renderSummary() {
-  const ws = addDays(weekStart(today()), currentWeekOffset * 7);
-  const we = addDays(ws, 6);
+  const ws  = addDays(weekStart(today()), currentWeekOffset * 7);
+  const we  = addDays(ws, 6);
   document.getElementById('summary-range-label').textContent =
     `${ws.getDate()} ${MONTHS[ws.getMonth()]} – ${we.getDate()} ${MONTHS[we.getMonth()]}`;
 
-  // Gather week data
   const weekDays = Array.from({length:7}, (_,i) => addDays(ws, i));
-  const weekKeys = weekDays.map(d => dayKey(d));
-  const weekData = weekKeys.map(k => db[k] || {});
+  const weekData = weekDays.map(d => db[dayKey(d)] || {});
 
-  // Counts
-  const strengthSessions = weekData.filter(d => d.strength_done).length;
-  const stretches   = weekData.filter(d => (d.core||{}).stretch).length;
-  const cores       = weekData.filter(d => (d.core||{}).core).length;
-  const cardios     = weekData.filter(d => (d.fitness||{}).cardio).length;
-  const sprints     = weekData.filter(d => (d.fitness||{}).sprint).length;
-  const hotcolds    = weekData.filter(d => (d.wellness||{}).hotcold).length;
-  const mobilities  = weekData.filter(d => (d.wellness||{}).mobility).length;
+  const sCount    = weekData.filter(d=>d.strength_done).length;
+  const stretches = weekData.filter(d=>(d.core||{}).stretch).length;
+  const cores     = weekData.filter(d=>(d.core||{}).core).length;
+  const cardios   = weekData.filter(d=>(d.fitness||{}).cardio).length;
+  const sprints   = weekData.filter(d=>(d.fitness||{}).sprint).length;
+  const hotcolds  = weekData.filter(d=>(d.wellness||{}).hotcold).length;
+  const mobilities= weekData.filter(d=>(d.wellness||{}).mobility).length;
 
-  // Average day score (weekdays)
-  let scoreTotal = 0, scoreDays = 0;
+  let scoreTotal=0, scoreDays=0;
   weekDays.forEach((d,i) => {
     if (isWeekday(d)) {
       const sc = weekData[i].scores || {};
-      if (Object.keys(sc).length) {
-        scoreTotal += Object.values(sc).reduce((a,b)=>a+b,0) / Object.values(sc).length;
-        scoreDays++;
-      }
+      if (Object.keys(sc).length) { scoreTotal += Object.values(sc).reduce((a,b)=>a+b,0)/Object.values(sc).length; scoreDays++; }
     }
   });
   const avgDayScore = scoreDays ? (scoreTotal/scoreDays).toFixed(1) : '—';
 
-  // Per-score averages
   const scoreAvgs = SCORE_ITEMS.map(item => {
     let tot=0, cnt=0;
     weekDays.forEach((d,i) => {
-      if (isWeekday(d) && weekData[i].scores?.[item.id]) {
-        tot += weekData[i].scores[item.id]; cnt++;
-      }
+      if (isWeekday(d) && weekData[i].scores?.[item.id] !== undefined) { tot += weekData[i].scores[item.id]; cnt++; }
     });
     return { label: item.label, avg: cnt ? (tot/cnt).toFixed(1) : '—' };
   });
 
-  // All veg this week
-  const allVeg = weekData.flatMap(d => d.veg || []);
+  const allVeg = weekData.flatMap(d=>d.veg||[]);
   const vegByFamily = {};
-  allVeg.forEach(v => { vegByFamily[v.family] = (vegByFamily[v.family]||0) + 1; });
+  allVeg.forEach(v => { vegByFamily[v.family] = (vegByFamily[v.family]||0)+1; });
   const maxVeg = Math.max(...Object.values(vegByFamily), 1);
 
-  // Suggestions
-  const suggestions = generateSuggestions({
-    strengthSessions, stretches, cores, cardios, sprints, hotcolds, mobilities,
-    avgDayScore: scoreDays ? scoreTotal/scoreDays : null,
-    vegByFamily, totalVeg: allVeg.length, scoreAvgs
-  });
-
-  const accColor = v => v < 4 ? 'var(--accent4)' : v < 7 ? 'var(--accent3)' : 'var(--accent)';
+  const accColor = v => v < 4 ? '#B83050' : v < 7 ? '#C4651A' : '#2D6A2D';
 
   let html = `<div class="summary-grid">
-    ${summaryCard('💪', strengthSessions, 'Strength sessions', 3, 'var(--accent)')}
-    ${summaryCard('🧘', stretches, 'Stretches', 4, 'var(--accent2)')}
-    ${summaryCard('⚡', cores, 'Core sessions', 2, 'var(--accent2)')}
-    ${summaryCard('🏃', cardios, 'Cardio sessions', 3, 'var(--accent3)')}
-    ${summaryCard('🔥', sprints, 'Sprint sessions', 1, 'var(--accent3)')}
-    ${summaryCard('🧊', hotcolds, 'Hot & Cold', 7, 'var(--accent4)')}
-    ${summaryCard('🌅', mobilities, 'Morning Mobility', 5, 'var(--accent)')}
-    ${summaryCard('⭐', avgDayScore, 'Avg Day Score', null, accColor(parseFloat(avgDayScore)||0))}
-    ${summaryCard('🥦', allVeg.length, 'Veg portions', null, 'var(--accent)')}
+    ${sCard('💪', sCount,     'Strength sessions', 3,  '#2D6A2D')}
+    ${sCard('🧘', stretches,  'Stretches',         4,  '#7a30a8')}
+    ${sCard('⚡', cores,      'Core sessions',     2,  '#7a30a8')}
+    ${sCard('🏃', cardios,    'Cardio sessions',   3,  '#C4651A')}
+    ${sCard('🔥', sprints,    'Sprints',           1,  '#C4651A')}
+    ${sCard('🧊', hotcolds,   'Hot & Cold',        7,  '#1A5C8A')}
+    ${sCard('🌅', mobilities, 'Morning Mobility',  5,  '#2D6A2D')}
+    ${sCard('⭐', avgDayScore,'Avg Day Score',     null, accColor(parseFloat(avgDayScore)||0))}
+    ${sCard('🥦', allVeg.length,'Veg portions',   null, '#1a7a45')}
   </div>`;
 
-  // Per-score breakdown
+  // Day quality breakdown
   html += `<div class="card">
-    <div class="card-header"><div class="card-icon" style="background:#2a2a1e">⭐</div>
+    <div class="card-header"><div class="card-icon" style="background:#faf8e4">⭐</div>
     <div class="card-title">Day Quality Breakdown</div></div>
     <div class="slider-list">
       ${scoreAvgs.map(s => {
-        const v = parseFloat(s.avg) || 0;
-        const pct = v/10*100;
+        const v = parseFloat(s.avg)||0;
         return `<div class="slider-item">
           <div class="slider-top">
             <div class="slider-label">${s.label}</div>
             <div class="slider-val" style="color:${accColor(v)}">${s.avg}</div>
           </div>
-          <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${accColor(v)}"></div></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${v/10*100}%;background:${accColor(v)}"></div></div>
         </div>`;
       }).join('')}
     </div>
   </div>`;
 
   // Veg breakdown
-  if (allVeg.length > 0) {
+  if (allVeg.length) {
     html += `<div class="card">
-      <div class="card-header"><div class="card-icon" style="background:#1e3a1e">🥦</div>
+      <div class="card-header"><div class="card-icon" style="background:#eaf8ea">🥦</div>
       <div class="card-title">Vegetable Breakdown</div>
       <div class="card-subtitle">${allVeg.length} total portions</div></div>
-      <div class="veg-breakdown">
-        ${Object.entries(vegByFamily).sort((a,b)=>b[1]-a[1]).map(([fam, count]) => {
-          const f = VEG_FAMILIES[fam] || { label: 'Other', color:'#b0b0b0' };
-          return `<div class="veg-family-row">
-            <div class="vf-name" style="color:${f.color}">${f.label}</div>
-            <div class="vf-bar-wrap"><div class="vf-bar-fill" style="width:${count/maxVeg*100}%;background:${f.color}"></div></div>
-            <div class="vf-count" style="color:${f.color}">${count}</div>
-          </div>`;
-        }).join('')}
-      </div>
+      ${Object.entries(vegByFamily).sort((a,b)=>b[1]-a[1]).map(([fam, count]) => {
+        const f = VEG_FAMILIES[fam];
+        const col = f ? f.color : '#888';
+        const bar = f ? f.barColor : '#aaa';
+        return `<div class="veg-family-row">
+          <div class="vf-name" style="color:${col}">${f ? f.label : 'Other'}</div>
+          <div class="vf-bar-wrap"><div class="vf-bar-fill" style="width:${count/maxVeg*100}%;background:${bar}"></div></div>
+          <div class="vf-count" style="color:${col}">${count}</div>
+        </div>`;
+      }).join('')}
     </div>`;
   }
 
   // Suggestions
+  const suggestions = makeSuggestions({ sCount, stretches, cores, cardios, sprints, hotcolds, mobilities,
+    avgScore: scoreDays ? scoreTotal/scoreDays : null, vegByFamily, totalVeg: allVeg.length, scoreAvgs });
   if (suggestions.length) {
     html += `<div class="card">
-      <div class="card-header"><div class="card-icon" style="background:#2a2a1e">💡</div>
+      <div class="card-header"><div class="card-icon" style="background:#fffbe8">💡</div>
       <div class="card-title">Next Week — Suggestions</div></div>
-      <div class="suggestion-list">
-        ${suggestions.map(s=>`<div class="suggestion-item">
-          <div class="suggestion-icon">${s.icon}</div>
-          <div>${s.text}</div>
-        </div>`).join('')}
-      </div>
+      <div class="suggestion-list">${suggestions.map(s =>
+        `<div class="suggestion-item"><div class="suggestion-icon">${s.icon}</div><div>${s.text}</div></div>`
+      ).join('')}</div>
     </div>`;
   }
 
   document.getElementById('summary-content').innerHTML = html;
 }
 
-function summaryCard(icon, val, label, target, color) {
+function sCard(icon, val, label, target, color) {
   const pct = target ? Math.min(100, Math.round((parseFloat(val)||0)/target*100)) : null;
   return `<div class="summary-card">
     <div class="sc-num" style="color:${color}">${val}</div>
-    <div class="sc-label">${icon} ${label}${target ? ' / '+target : ''}</div>
-    ${pct !== null ? `<div class="sc-bar"><div class="sc-bar-fill" style="width:${pct}%;background:${color}"></div></div>` : ''}
+    <div class="sc-label">${icon} ${label}${target?' / '+target:''}</div>
+    ${pct!==null ? `<div class="sc-bar"><div class="sc-bar-fill" style="width:${pct}%;background:${color}"></div></div>` : ''}
   </div>`;
 }
 
-function generateSuggestions({ strengthSessions, stretches, cores, cardios, sprints,
-  hotcolds, mobilities, avgDayScore, vegByFamily, totalVeg, scoreAvgs }) {
+function makeSuggestions({ sCount, stretches, cores, cardios, sprints, hotcolds, mobilities,
+    avgScore, vegByFamily, totalVeg, scoreAvgs }) {
   const s = [];
-
-  if (strengthSessions < 3) s.push({ icon:'💪', text:`You completed ${strengthSessions}/3 strength sessions. Try booking them in your calendar at the start of the week.` });
-  if (stretches < 4) s.push({ icon:'🧘', text:`Only ${stretches}/4 stretches done. Consider a 10-min stretch before bed to hit target.` });
-  if (cores < 2) s.push({ icon:'⚡', text:`${cores}/2 core sessions — pair it with your strength days to make it a habit.` });
-  if (cardios < 3) s.push({ icon:'🏃', text:`${cardios}/3 cardio sessions. Even a brisk 20-minute walk counts.` });
-  if (sprints < 1) s.push({ icon:'🔥', text:`No sprint session this week. A 4×30s effort tacked onto any cardio session will do it.` });
-  if (hotcolds < 4) s.push({ icon:'🧊', text:`Hot & cold done ${hotcolds} days. Daily contrast showers take under 5 minutes.` });
-  if (mobilities < 5) s.push({ icon:'🌅', text:`Morning mobility ${mobilities}/5 days. Set a phone alarm labelled "move" as your first alarm.` });
-
-  // Veg suggestions
-  if (totalVeg < 14) s.push({ icon:'🥦', text:`Aim for 2+ portions per day — you had ${totalVeg} this week. Add veg to every main meal.` });
-  const allFamilies = Object.keys(VEG_FAMILIES);
-  const missing = allFamilies.filter(f => !vegByFamily[f]);
-  if (missing.length) {
-    const names = missing.map(f => VEG_FAMILIES[f].label).join(', ');
-    s.push({ icon:'🌈', text:`Missing these veg families this week: ${names}. Variety feeds different gut microbiomes.` });
+  if (sCount < 3)     s.push({ icon:'💪', text:`${sCount}/3 strength sessions. Try scheduling them at the start of the week.` });
+  if (stretches < 4)  s.push({ icon:'🧘', text:`Only ${stretches}/4 stretches done. A 10-min stretch before bed makes this easy to hit.` });
+  if (cores < 2)      s.push({ icon:'⚡', text:`${cores}/2 core sessions — pair with your strength days to build the habit.` });
+  if (cardios < 3)    s.push({ icon:'🏃', text:`${cardios}/3 cardio sessions. Even a brisk 20-minute walk counts.` });
+  if (sprints < 1)    s.push({ icon:'🔥', text:`No sprint session this week. Four 30-second efforts tacked onto any cardio will do it.` });
+  if (hotcolds < 4)   s.push({ icon:'🧊', text:`Hot & cold done ${hotcolds}/7 days. A daily contrast shower takes under 5 minutes.` });
+  if (mobilities < 5) s.push({ icon:'🌅', text:`Morning mobility ${mobilities}/5 days. Set a phone alarm as your first prompt of the day.` });
+  if (totalVeg < 14)  s.push({ icon:'🥦', text:`${totalVeg} veg portions this week — aim for 2+ per day. Add veg to every main meal.` });
+  const allFams = Object.keys(VEG_FAMILIES);
+  const missing = allFams.filter(f => !vegByFamily[f]);
+  if (missing.length) s.push({ icon:'🌈', text:`Missing: ${missing.map(f=>VEG_FAMILIES[f].label).join(', ')}. Variety supports gut microbiome diversity.` });
+  if (!vegByFamily.cruciferous) s.push({ icon:'🥦', text:`No cruciferous veg this week (broccoli, cauliflower, Brussels sprouts) — great for hormone regulation.` });
+  if (avgScore && avgScore < 6) {
+    const lowest = [...scoreAvgs].filter(x=>x.avg!=='—').sort((a,b)=>parseFloat(a.avg)-parseFloat(b.avg))[0];
+    if (lowest) s.push({ icon:'⭐', text:`Lowest day score: "${lowest.label}" (${lowest.avg}/10). What one small change could shift this next week?` });
   }
-  if (!vegByFamily.cruciferous) s.push({ icon:'🥦', text:`No cruciferous veg (broccoli, cauliflower, Brussels sprouts) this week — these are especially valuable for hormone regulation.` });
-
-  // Score suggestions
-  if (avgDayScore && avgDayScore < 6) {
-    const lowest = [...scoreAvgs].filter(x => x.avg !== '—').sort((a,b)=>a.avg-b.avg)[0];
-    if (lowest) s.push({ icon:'⭐', text:`Your lowest day-quality score was "${lowest.label}" (${lowest.avg}/10). What one small change could shift this next week?` });
-  }
-
   return s.slice(0, 6);
 }
 
-// ══════════════════════════════════════════
-//  TRENDS VIEW
-// ══════════════════════════════════════════
+// ── TRENDS ────────────────────────────────────────────────────────────────
 function renderTrends() {
-  // Get last 8 weeks of data
   const weeks = [];
-  for (let w=7; w>=0; w--) {
+  for (let w=7;w>=0;w--) {
     const ws = addDays(weekStart(today()), -w*7);
-    const weekDays = Array.from({length:7}, (_,i) => addDays(ws, i));
-    const weekData = weekDays.map(d => db[dayKey(d)] || {});
-    const strengthCount = weekData.filter(d=>d.strength_done).length;
-    const vegs = weekData.flatMap(d=>d.veg||[]).length;
-    let scoreTotal=0, scoreCnt=0;
-    weekDays.forEach((d,i)=>{
-      if (isWeekday(d) && weekData[i].scores) {
-        const vals = Object.values(weekData[i].scores);
-        if (vals.length) { scoreTotal += vals.reduce((a,b)=>a+b,0)/vals.length; scoreCnt++; }
+    const days = Array.from({length:7}, (_,i) => addDays(ws, i));
+    const data = days.map(d => db[dayKey(d)] || {});
+    let tot=0, cnt=0;
+    days.forEach((d,i) => {
+      if (isWeekday(d) && data[i].scores) {
+        const vals = Object.values(data[i].scores);
+        if (vals.length) { tot += vals.reduce((a,b)=>a+b,0)/vals.length; cnt++; }
       }
     });
     weeks.push({
       label: ws.getDate()+' '+MONTHS[ws.getMonth()],
-      strength: strengthCount,
-      veg: vegs,
-      score: scoreCnt ? scoreTotal/scoreCnt : null
+      strength: data.filter(d=>d.strength_done).length,
+      veg: data.flatMap(d=>d.veg||[]).length,
+      score: cnt ? tot/cnt : null
     });
   }
 
-  // PB table
   const pbs = db._pbs || {};
-
   let html = `<div class="card">
-    <div class="card-header"><div class="card-icon" style="background:#2e1e1e">🏆</div>
+    <div class="card-header"><div class="card-icon" style="background:#fdf4e4">🏆</div>
     <div class="card-title">Personal Bests</div></div>
     <table class="pb-table">
-      <tr><th>Lift</th><th>Best weight (kg)</th></tr>
-      ${LIFTS.map(l => `<tr>
-        <td>${l}</td>
-        <td><span class="pb-val" style="color:var(--accent)">${pbs[l.toLowerCase()] || '—'}</span></td>
-      </tr>`).join('')}
+      <tr><th>Lift</th><th>Best (kg)</th></tr>
+      ${LIFTS.map(l=>`<tr><td>${l}</td><td><span class="pb-val">${pbs[l.toLowerCase()]||'—'}</span></td></tr>`).join('')}
     </table>
   </div>`;
 
-  // Strength trend
   html += `<div class="card">
-    <div class="card-header"><div class="card-icon" style="background:#1e2e1e">💪</div>
+    <div class="card-header"><div class="card-icon" style="background:#eaf4ea">💪</div>
     <div class="card-title">Strength Sessions / Week</div></div>
-    ${sparkChart(weeks.map(w=>w.strength), 0, 3, 'var(--accent)', weeks.map(w=>w.label))}
+    ${spark(weeks.map(w=>w.strength), 0, 3, '#2D6A2D', weeks.map(w=>w.label))}
   </div>`;
 
-  // Veg trend
   html += `<div class="card">
-    <div class="card-header"><div class="card-icon" style="background:#1e3a1e">🥦</div>
+    <div class="card-header"><div class="card-icon" style="background:#eaf8ea">🥦</div>
     <div class="card-title">Veg Portions / Week</div></div>
-    ${sparkChart(weeks.map(w=>w.veg), 0, 20, '#6fcf97', weeks.map(w=>w.label))}
+    ${spark(weeks.map(w=>w.veg), 0, 20, '#1a7a45', weeks.map(w=>w.label))}
   </div>`;
 
-  // Day score trend
   html += `<div class="card">
-    <div class="card-header"><div class="card-icon" style="background:#2a2a1e">⭐</div>
+    <div class="card-header"><div class="card-icon" style="background:#faf8e4">⭐</div>
     <div class="card-title">Average Day Score / Week</div></div>
-    ${sparkChart(weeks.map(w=>w.score), 0, 10, 'var(--accent3)', weeks.map(w=>w.label), true)}
+    ${spark(weeks.map(w=>w.score), 0, 10, '#C4651A', weeks.map(w=>w.label), true)}
   </div>`;
 
   document.getElementById('trends-content').innerHTML = html;
 }
 
-function sparkChart(values, ymin, ymax, color, labels, isScore) {
-  const W = 800, H = 100, padL=8, padR=8, padT=10, padB=24;
+function spark(values, ymin, ymax, color, labels, isScore) {
+  const W=800, H=110, pL=8, pR=8, pT=12, pB=26;
   const n = values.length;
-  if (n < 2) return '<div style="color:var(--text-dim);font-size:0.8rem;padding:0.5rem">Not enough data yet</div>';
-
-  const pts = values.map((v, i) => {
-    const x = padL + (i/(n-1)) * (W - padL - padR);
-    const eff = v === null ? null : (v - ymin) / (ymax - ymin);
-    const y = eff === null ? null : H - padB - eff * (H - padT - padB);
-    return { x, y, v };
+  if (n < 2) return `<p style="color:var(--text-dim);font-size:0.8rem;padding:0.5rem">Not enough data yet — keep logging!</p>`;
+  const pts = values.map((v,i) => {
+    const x = pL + (i/(n-1)) * (W-pL-pR);
+    const eff = v===null ? null : (v-ymin)/(ymax-ymin||1);
+    const y   = eff===null ? null : H-pB - eff*(H-pT-pB);
+    return {x,y,v};
   });
-
-  const pathD = pts.filter(p=>p.y!==null).map((p,i)=>
-    (i===0?'M':'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)
-  ).join(' ');
-
-  const dots = pts.filter(p=>p.y!==null).map(p =>
-    `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${color}"/>`
-  ).join('');
-
-  const xLabels = labels.map((l,i) => {
-    const x = padL + (i/(n-1)) * (W - padL - padR);
-    return `<text x="${x.toFixed(1)}" y="${H}" text-anchor="middle" font-size="9" fill="#5A5E6B">${l}</text>`;
-  }).join('');
-
-  const valLabels = pts.filter(p=>p.y!==null).map(p => {
-    const disp = p.v === null ? '' : isScore ? p.v.toFixed(1) : p.v;
-    return `<text x="${p.x.toFixed(1)}" y="${(p.y-7).toFixed(1)}" text-anchor="middle" font-size="9" fill="${color}">${disp}</text>`;
-  }).join('');
-
+  const valid = pts.filter(p=>p.y!==null);
+  if (!valid.length) return `<p style="color:var(--text-dim);font-size:0.8rem;padding:0.5rem">No data yet</p>`;
+  const pathD = valid.map((p,i)=>(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+  const dots  = valid.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join('');
+  const vals  = valid.map(p=>`<text x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}" text-anchor="middle" font-size="9" fill="${color}" font-family="sans-serif">${isScore?p.v.toFixed(1):p.v}</text>`).join('');
+  const xlbls = labels.map((l,i)=>{const x=pL+(i/(n-1))*(W-pL-pR); return `<text x="${x.toFixed(1)}" y="${H}" text-anchor="middle" font-size="9" fill="#A8A49C" font-family="sans-serif">${l}</text>`;}).join('');
   return `<div class="trend-chart">
     <svg class="trend-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-      <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
-      ${dots}${valLabels}${xLabels}
+      <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" opacity="0.8"/>
+      ${dots}${vals}${xlbls}
     </svg>
   </div>`;
 }
 
-// ══════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════
+// ── INIT ─────────────────────────────────────────────────────────────────
 viewDate = today();
 renderToday();
 </script>
