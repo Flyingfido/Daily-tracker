@@ -500,9 +500,9 @@ async function sendMagicLink() {
   btn.disabled = true; btn.textContent = 'Sending…';
   msg.textContent = ''; msg.className = 'auth-msg';
   const { error } = await _supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.href }
-  });
+  email,
+  options: { emailRedirectTo: window.location.origin + window.location.pathname.replace(/\/$/, '') }
+});
   if (error) {
     msg.textContent = 'Error: ' + error.message; msg.className='auth-msg error';
     btn.disabled=false; btn.textContent='Send Magic Link';
