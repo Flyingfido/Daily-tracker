@@ -53,6 +53,7 @@ body { font-family: 'Instrument Sans', sans-serif; background: var(--bg); color:
 .auth-msg { margin-top: 1rem; font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; min-height: 1.5rem; }
 .auth-msg.success { color: var(--accent); }
 .auth-msg.error { color: var(--danger); }
+.auth-msg.warning { color: var(--accent3); }
 
 /* ── NAV ── */
 nav {
@@ -499,17 +500,34 @@ async function sendMagicLink() {
   if (!email) { msg.textContent = 'Please enter your email address.'; msg.className='auth-msg error'; return; }
   btn.disabled = true; btn.textContent = 'Sending…';
   msg.textContent = ''; msg.className = 'auth-msg';
+  
+  // Build redirect URL - ensure it matches what's in Supabase
+  const redirectUrl = window.location.origin + window.location.pathname;
+  
   const { error } = await _supabase.auth.signInWithOtp({
-  email,
-  options: { emailRedirectTo: window.location.origin + window.location.pathname.replace(/\/$/, '') }
-});
+    email,
+    options: { emailRedirectTo: redirectUrl }
+  });
+  
   if (error) {
-    msg.textContent = 'Error: ' + error.message; msg.className='auth-msg error';
-    btn.disabled=false; btn.textContent='Send Magic Link';
+    // Handle specific error types with friendly messages
+    if (error.message.toLowerCase().includes('rate limit')) {
+      msg.innerHTML = '⏳ Too many requests. Please wait a minute before trying again.';
+      msg.className = 'auth-msg warning';
+    } else if (error.message.toLowerCase().includes('invalid email')) {
+      msg.textContent = 'Please enter a valid email address.';
+      msg.className = 'auth-msg error';
+    } else {
+      msg.textContent = 'Error: ' + error.message;
+      msg.className = 'auth-msg error';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Send Magic Link';
   } else {
     msg.innerHTML = '✅ Magic link sent! Check your email inbox and tap the link to log in.';
     msg.className = 'auth-msg success';
-    btn.textContent = 'Resend link'; btn.disabled=false;
+    btn.textContent = 'Resend link';
+    btn.disabled = false;
   }
 }
 
