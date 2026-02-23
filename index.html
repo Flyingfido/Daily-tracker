@@ -492,6 +492,26 @@ function scheduleSave(key) {
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
+let _magicLinkCooldownTimer = null;
+
+function _startMagicLinkCooldown() {
+  const btn = document.getElementById('auth-btn');
+  let remaining = 60;
+  btn.disabled = true;
+  btn.textContent = `Resend in ${remaining}s`;
+  _magicLinkCooldownTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(_magicLinkCooldownTimer);
+      _magicLinkCooldownTimer = null;
+      btn.disabled = false;
+      btn.textContent = 'Resend link';
+    } else {
+      btn.textContent = `Resend in ${remaining}s`;
+    }
+  }, 1000);
+}
+
 async function sendMagicLink() {
   const email = document.getElementById('auth-email').value.trim();
   const msg   = document.getElementById('auth-msg');
@@ -500,16 +520,25 @@ async function sendMagicLink() {
   btn.disabled = true; btn.textContent = 'Sending…';
   msg.textContent = ''; msg.className = 'auth-msg';
   const { error } = await _supabase.auth.signInWithOtp({
-  email,
-  options: { emailRedirectTo: window.location.origin + window.location.pathname.replace(/\/$/, '') }
-});
+    email,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname.replace(/\/$/, '') }
+  });
   if (error) {
-    msg.textContent = 'Error: ' + error.message; msg.className='auth-msg error';
-    btn.disabled=false; btn.textContent='Send Magic Link';
+    const isRateLimit = /rate.?limit|too many/i.test(error.message);
+    msg.textContent = isRateLimit
+      ? 'Too many attempts — please wait a minute before trying again.'
+      : 'Error: ' + error.message;
+    msg.className = 'auth-msg error';
+    if (isRateLimit) {
+      _startMagicLinkCooldown();
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Send Magic Link';
+    }
   } else {
     msg.innerHTML = '✅ Magic link sent! Check your email inbox and tap the link to log in.';
     msg.className = 'auth-msg success';
-    btn.textContent = 'Resend link'; btn.disabled=false;
+    _startMagicLinkCooldown();
   }
 }
 
