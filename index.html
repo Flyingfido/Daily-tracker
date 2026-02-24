@@ -532,6 +532,7 @@ async function sendMagicLink() {
 }
 
 async function signOut() {
+  appInitialized = false;
   await _supabase.auth.signOut();
   localDb={}; pbData={};
   document.getElementById('app').style.display='none';
@@ -540,26 +541,30 @@ async function signOut() {
   document.getElementById('auth-email').value='';
 }
 
+let appInitialized = false;
 async function initApp(user) {
+  if (appInitialized) return;
+  appInitialized = true;
   currentUser = user;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('nav-email').textContent = user.email;
-  await loadAllData();
   viewDate = today();
-  renderToday();
+  renderToday();              // render immediately so UI is never blank
+  await loadAllData();
+  renderToday();              // re-render once cloud data arrives
 }
 
 // Listen for auth state changes (including magic link redirect)
 _supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log('Auth event:', event, session?.user?.email); // Debug logging
-  if (event === 'SIGNED_IN' && session?.user) {
-    // Clean the URL hash after successful magic link auth
+  console.log('Auth event:', event, session?.user?.email);
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
     if (window.location.hash) {
       window.history.replaceState(null, '', window.location.pathname);
     }
     await initApp(session.user);
   } else if (event === 'SIGNED_OUT') {
+    appInitialized = false;
     document.getElementById('app').style.display='none';
     document.getElementById('auth-screen').style.display='flex';
   }
