@@ -264,6 +264,22 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
   display: inline-block; animation: pulse 1.2s infinite; margin-left: 0.3rem; vertical-align: middle;
 }
 
+/* ── TOAST NOTIFICATIONS ── */
+.toast-container {
+  position: fixed; top: 68px; right: 1rem; z-index: 300;
+  display: flex; flex-direction: column; gap: 0.4rem; pointer-events: none;
+}
+.toast {
+  padding: 0.6rem 1.1rem; border-radius: var(--radius-sm); font-size: 0.8rem;
+  font-family: 'Instrument Sans', sans-serif; font-weight: 500;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12); opacity: 0;
+  transform: translateX(20px); transition: all 0.25s ease; pointer-events: auto;
+  max-width: 340px;
+}
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast.success { background: var(--accent-light); color: var(--accent); border: 1px solid #b8ddb8; }
+.toast.error { background: #fdedef; color: var(--danger); border: 1px solid #f0a8b4; }
+
 /* ── ANIMATIONS ── */
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .card { animation: fadeUp 0.22s ease both; }
@@ -393,6 +409,9 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     <div id="trends-content"></div>
   </div>
 
+  <!-- TOAST NOTIFICATIONS -->
+  <div class="toast-container" id="toast-container"></div>
+
   <!-- SAVE BAR -->
   <div class="save-bar" id="save-bar">
     <button class="save-btn" id="save-btn" onclick="saveAll()">Save changes</button>
@@ -439,11 +458,43 @@ function classifyVeg(name) {
   return 'other';
 }
 
-// ── LOCAL CACHE (edit locally, save explicitly) ──────────────────────────
+// ── LOCAL CACHE + localStorage PERSISTENCE ──────────────────────────────
 let localDb = {}; // { 'YYYY-MM-DD': {...dayData} }
 let pbData  = {}; // { deadlift: 100, ... }
 let dirtyKeys = new Set(); // day keys with unsaved changes
 let pbDirty = false;       // whether PBs need saving
+let _autoSaveTimer = null;
+const AUTOSAVE_DELAY = 2500; // ms after last change before auto-saving to Supabase
+
+// ── localStorage helpers ─────────────────────────────────────────────────
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem('dt_localDb', JSON.stringify(localDb));
+    localStorage.setItem('dt_pbData', JSON.stringify(pbData));
+    localStorage.setItem('dt_dirtyKeys', JSON.stringify([...dirtyKeys]));
+    localStorage.setItem('dt_pbDirty', JSON.stringify(pbDirty));
+  } catch(e) { console.warn('localStorage save failed:', e); }
+}
+function loadFromLocalStorage() {
+  try {
+    const db = localStorage.getItem('dt_localDb');
+    const pb = localStorage.getItem('dt_pbData');
+    const dk = localStorage.getItem('dt_dirtyKeys');
+    const pd = localStorage.getItem('dt_pbDirty');
+    if (db) localDb = JSON.parse(db);
+    if (pb) pbData = JSON.parse(pb);
+    if (dk) { dirtyKeys = new Set(JSON.parse(dk)); }
+    if (pd) { pbDirty = JSON.parse(pd); }
+  } catch(e) { console.warn('localStorage load failed:', e); }
+}
+function clearLocalDirtyFlags() {
+  dirtyKeys.clear();
+  pbDirty = false;
+  try {
+    localStorage.setItem('dt_dirtyKeys', '[]');
+    localStorage.setItem('dt_pbDirty', 'false');
+  } catch(e) {}
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 let viewDate = new Date();
@@ -466,6 +517,20 @@ function setSyncStatus(status) {
   dot.title = status==='syncing'?'Saving…':status==='error'?'Sync error':'Saved';
 }
 
+function showToast(message, type) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
 function updateSaveBar() {
   const bar = document.getElementById('save-bar');
   const btn = document.getElementById('save-btn');
@@ -481,15 +546,24 @@ function updateSaveBar() {
 
 function markDirty(key) {
   dirtyKeys.add(key);
+  saveToLocalStorage();   // persist immediately to survive refresh
   updateSaveBar();
+  scheduleAutoSave();     // debounced save to Supabase
+}
+
+function scheduleAutoSave() {
+  if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(() => { _autoSaveTimer = null; saveAll(); }, AUTOSAVE_DELAY);
 }
 
 async function saveAll() {
   if (!currentUser) return;
+  if (dirtyKeys.size === 0 && !pbDirty) return; // nothing to save
   const btn = document.getElementById('save-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = 'Saving…'; }
   setSyncStatus('syncing');
   let hadError = false;
+  let errorMsg = '';
 
   // Save all dirty day keys
   const keys = [...dirtyKeys];
@@ -506,39 +580,70 @@ async function saveAll() {
     } catch(e) {
       console.error('Save error for', key, e);
       hadError = true;
+      errorMsg = e.message || String(e);
     }
   }
 
   // Save PBs if dirty
   if (pbDirty) {
     try {
-      await _supabase.from('personal_bests').upsert({
+      const { error } = await _supabase.from('personal_bests').upsert({
         user_id: currentUser.id, data: pbData, updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
+      if (error) throw error;
       pbDirty = false;
     } catch(e) {
       console.error('PB save error:', e);
       hadError = true;
+      errorMsg = e.message || String(e);
     }
   }
+
+  // Update localStorage to reflect cleared dirty flags
+  saveToLocalStorage();
 
   setSyncStatus(hadError ? 'error' : 'saved');
   if (btn) { btn.disabled = false; }
   updateSaveBar();
+
+  // Show user-visible feedback
+  if (hadError) {
+    showToast('Supabase sync failed: ' + errorMsg + '. Data saved locally.', 'error');
+  } else if (keys.length > 0 || !hadError) {
+    showToast('Saved successfully', 'success');
+  }
 }
 
 // ── SUPABASE DATA OPS ──────────────────────────────────────────────────────
 async function loadAllData() {
   if (!currentUser) return;
+
+  // Keep track of locally dirty data before loading from Supabase
+  const pendingDirtyKeys = new Set(dirtyKeys);
+  const pendingLocalData = {};
+  for (const key of pendingDirtyKeys) {
+    if (localDb[key]) pendingLocalData[key] = JSON.parse(JSON.stringify(localDb[key]));
+  }
+  const pendingPbDirty = pbDirty;
+  const pendingPbData = pbDirty ? JSON.parse(JSON.stringify(pbData)) : null;
+
   try {
-    // Load daily logs
+    // Load daily logs from Supabase
     const { data: logs, error: logErr } = await _supabase
       .from('daily_logs')
       .select('day_key, data')
       .eq('user_id', currentUser.id);
     if (logErr) throw logErr;
-    localDb = {};
-    (logs||[]).forEach(row => { localDb[row.day_key] = row.data || {}; });
+
+    // Start with Supabase data
+    const cloudDb = {};
+    (logs||[]).forEach(row => { cloudDb[row.day_key] = row.data || {}; });
+
+    // Merge: cloud data first, then overlay any locally-dirty data on top
+    localDb = cloudDb;
+    for (const key of pendingDirtyKeys) {
+      if (pendingLocalData[key]) localDb[key] = pendingLocalData[key];
+    }
 
     // Load PBs
     const { data: pbs, error: pbErr } = await _supabase
@@ -546,9 +651,27 @@ async function loadAllData() {
       .select('data')
       .eq('user_id', currentUser.id)
       .single();
-    if (!pbErr && pbs) pbData = pbs.data || {};
+    if (!pbErr && pbs) {
+      pbData = pbs.data || {};
+      // Re-overlay locally dirty PBs
+      if (pendingPbDirty && pendingPbData) {
+        for (const [k,v] of Object.entries(pendingPbData)) {
+          if (v > (pbData[k]||0)) pbData[k] = v;
+        }
+      }
+    }
+
+    // Persist merged data back to localStorage
+    saveToLocalStorage();
   } catch(e) {
-    console.error('Load error:', e);
+    console.error('Supabase load error (using localStorage data):', e);
+    // localStorage data is already in localDb from loadFromLocalStorage(), so the app still works
+  }
+
+  // If there were dirty keys that need syncing back up, re-schedule
+  if (dirtyKeys.size > 0 || pbDirty) {
+    updateSaveBar();
+    scheduleAutoSave();
   }
 }
 
@@ -597,6 +720,8 @@ async function signOut() {
   appInitialized = false;
   await _supabase.auth.signOut();
   localDb={}; pbData={}; dirtyKeys.clear(); pbDirty=false; updateSaveBar();
+  // Clear localStorage on sign out
+  try { localStorage.removeItem('dt_localDb'); localStorage.removeItem('dt_pbData'); localStorage.removeItem('dt_dirtyKeys'); localStorage.removeItem('dt_pbDirty'); } catch(e) {}
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('auth-msg').textContent='';
@@ -612,9 +737,15 @@ async function initApp(user) {
   document.getElementById('app').style.display='block';
   document.getElementById('nav-email').textContent = user.email;
   viewDate = today();
-  renderToday();              // render immediately so UI is never blank
+
+  // 1. Load from localStorage first (instant, survives refresh)
+  loadFromLocalStorage();
+  renderToday();
+  updateSaveBar();
+
+  // 2. Then merge with Supabase (async, may fail — that's OK)
   await loadAllData();
-  renderToday();              // re-render once cloud data arrives
+  renderToday();
 }
 
 // Listen for auth state changes (including magic link redirect)
@@ -640,8 +771,9 @@ _supabase.auth.onAuthStateChange(async (event, session) => {
   }
 })();
 
-// Warn before leaving with unsaved changes
+// Save to localStorage before leaving; warn if Supabase sync pending
 window.addEventListener('beforeunload', (e) => {
+  saveToLocalStorage();
   if (dirtyKeys.size > 0 || pbDirty) {
     e.preventDefault();
   }
@@ -784,7 +916,7 @@ function updateSet(key,lkey,idx,field,val){
 function getPB(lift){return pbData[lift.toLowerCase()]||0;}
 function updatePB(lift,weight){
   const lkey=lift.toLowerCase();
-  if(weight>(pbData[lkey]||0)){pbData[lkey]=weight;pbDirty=true;updateSaveBar();}
+  if(weight>(pbData[lkey]||0)){pbData[lkey]=weight;pbDirty=true;saveToLocalStorage();updateSaveBar();scheduleAutoSave();}
 }
 
 // Scores
