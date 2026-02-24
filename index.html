@@ -237,6 +237,33 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
   .view { padding: 1rem 0.75rem; }
 }
 
+/* ── SAVE BUTTON ── */
+.save-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  padding: 0.75rem 1.5rem; display: flex; justify-content: center;
+  background: rgba(247,247,245,0.96); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  transform: translateY(100%); transition: transform 0.25s ease;
+  pointer-events: none;
+}
+.save-bar.visible { transform: translateY(0); pointer-events: auto; }
+.save-btn {
+  padding: 0.7rem 2.2rem; background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius-sm); font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(45,106,45,0.3); display: flex; align-items: center; gap: 0.5rem;
+}
+.save-btn:hover { opacity: 0.88; box-shadow: 0 4px 14px rgba(45,106,45,0.35); }
+.save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.save-btn .save-count {
+  background: rgba(255,255,255,0.25); padding: 0.1rem 0.5rem;
+  border-radius: 10px; font-size: 0.72rem; font-family: 'Instrument Sans', sans-serif;
+}
+.unsaved-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent3);
+  display: inline-block; animation: pulse 1.2s infinite; margin-left: 0.3rem; vertical-align: middle;
+}
+
 /* ── ANIMATIONS ── */
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .card { animation: fadeUp 0.22s ease both; }
@@ -366,6 +393,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     <div id="trends-content"></div>
   </div>
 
+  <!-- SAVE BAR -->
+  <div class="save-bar" id="save-bar">
+    <button class="save-btn" id="save-btn" onclick="saveAll()">Save changes</button>
+  </div>
+
 </div><!-- /app -->
 
 <!-- Supabase SDK -->
@@ -407,10 +439,11 @@ function classifyVeg(name) {
   return 'other';
 }
 
-// ── LOCAL CACHE (for instant UI, then sync to Supabase) ──────────────────
+// ── LOCAL CACHE (edit locally, save explicitly) ──────────────────────────
 let localDb = {}; // { 'YYYY-MM-DD': {...dayData} }
 let pbData  = {}; // { deadlift: 100, ... }
-let pendingSync = null;
+let dirtyKeys = new Set(); // day keys with unsaved changes
+let pbDirty = false;       // whether PBs need saving
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 let viewDate = new Date();
@@ -431,6 +464,67 @@ function setSyncStatus(status) {
   if (!dot) return;
   dot.className = 'sync-dot' + (status==='syncing'?' syncing':status==='error'?' error':'');
   dot.title = status==='syncing'?'Saving…':status==='error'?'Sync error':'Saved';
+}
+
+function updateSaveBar() {
+  const bar = document.getElementById('save-bar');
+  const btn = document.getElementById('save-btn');
+  if (!bar || !btn) return;
+  const count = dirtyKeys.size + (pbDirty ? 1 : 0);
+  if (count > 0) {
+    bar.classList.add('visible');
+    btn.innerHTML = `Save changes <span class="save-count">${count} unsaved</span>`;
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function markDirty(key) {
+  dirtyKeys.add(key);
+  updateSaveBar();
+}
+
+async function saveAll() {
+  if (!currentUser) return;
+  const btn = document.getElementById('save-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Saving…'; }
+  setSyncStatus('syncing');
+  let hadError = false;
+
+  // Save all dirty day keys
+  const keys = [...dirtyKeys];
+  for (const key of keys) {
+    try {
+      const { error } = await _supabase.from('daily_logs').upsert({
+        user_id: currentUser.id,
+        day_key: key,
+        data: localDb[key] || {},
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,day_key' });
+      if (error) throw error;
+      dirtyKeys.delete(key);
+    } catch(e) {
+      console.error('Save error for', key, e);
+      hadError = true;
+    }
+  }
+
+  // Save PBs if dirty
+  if (pbDirty) {
+    try {
+      await _supabase.from('personal_bests').upsert({
+        user_id: currentUser.id, data: pbData, updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+      pbDirty = false;
+    } catch(e) {
+      console.error('PB save error:', e);
+      hadError = true;
+    }
+  }
+
+  setSyncStatus(hadError ? 'error' : 'saved');
+  if (btn) { btn.disabled = false; }
+  updateSaveBar();
 }
 
 // ── SUPABASE DATA OPS ──────────────────────────────────────────────────────
@@ -458,39 +552,7 @@ async function loadAllData() {
   }
 }
 
-async function saveDayToCloud(key) {
-  if (!currentUser) return;
-  setSyncStatus('syncing');
-  try {
-    const { error } = await _supabase.from('daily_logs').upsert({
-      user_id:    currentUser.id,
-      day_key:    key,
-      data:       localDb[key] || {},
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,day_key' });
-    if (error) throw error;
-    setSyncStatus('saved');
-  } catch(e) {
-    console.error('Save error:', e);
-    setSyncStatus('error');
-  }
-}
-
-async function savePBsToCloud() {
-  if (!currentUser) return;
-  try {
-    await _supabase.from('personal_bests').upsert({
-      user_id: currentUser.id, data: pbData, updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
-  } catch(e) { console.error('PB save error:', e); }
-}
-
-// Debounced save — waits 1.5s after last change before writing to Supabase
-function scheduleSave(key) {
-  if (pendingSync) clearTimeout(pendingSync);
-  setSyncStatus('syncing');
-  pendingSync = setTimeout(() => saveDayToCloud(key), 1500);
-}
+// saveDayToCloud and savePBsToCloud are now handled by saveAll()
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
 async function sendMagicLink() {
@@ -534,7 +596,7 @@ async function sendMagicLink() {
 async function signOut() {
   appInitialized = false;
   await _supabase.auth.signOut();
-  localDb={}; pbData={};
+  localDb={}; pbData={}; dirtyKeys.clear(); pbDirty=false; updateSaveBar();
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('auth-msg').textContent='';
@@ -577,6 +639,13 @@ _supabase.auth.onAuthStateChange(async (event, session) => {
     await initApp(session.user);
   }
 })();
+
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if (dirtyKeys.size > 0 || pbDirty) {
+    e.preventDefault();
+  }
+});
 
 // ── VIEW SWITCHING ─────────────────────────────────────────────────────────
 function showView(name, btn) {
@@ -653,12 +722,12 @@ function toggleCheck(key,section,id){
   const data=dayData(key);
   if(!data[section]) data[section]={};
   data[section][id]=!data[section][id];
-  scheduleSave(key); renderToday();
+  markDirty(key); renderToday();
 }
 function toggleStrength(){
   const key=dayKey(viewDate), data=dayData(key);
   data.strength_done=!data.strength_done;
-  scheduleSave(key); renderToday();
+  markDirty(key); renderToday();
 }
 
 // Lifts
@@ -688,8 +757,8 @@ function renderLifts(key){
     </div>`;
   }).join('');
 }
-function addSet(key,lkey){const d=dayData(key);if(!d.lifts)d.lifts={};if(!d.lifts[lkey])d.lifts[lkey]=[];d.lifts[lkey].push({reps:'',weight:''});scheduleSave(key);renderLifts(key);}
-function delSet(key,lkey,idx){dayData(key).lifts[lkey].splice(idx,1);scheduleSave(key);renderLifts(key);}
+function addSet(key,lkey){const d=dayData(key);if(!d.lifts)d.lifts={};if(!d.lifts[lkey])d.lifts[lkey]=[];d.lifts[lkey].push({reps:'',weight:''});markDirty(key);renderLifts(key);}
+function delSet(key,lkey,idx){dayData(key).lifts[lkey].splice(idx,1);markDirty(key);renderLifts(key);}
 function updateSet(key,lkey,idx,field,val){
   const data=dayData(key);
   data.lifts[lkey][idx][field]=val;
@@ -710,12 +779,12 @@ function updateSet(key,lkey,idx,field,val){
     document.getElementById('strength-progress').style.width=spct+'%';
     document.getElementById('strength-pct').textContent=spct+'%';
   }
-  scheduleSave(key);
+  markDirty(key);
 }
 function getPB(lift){return pbData[lift.toLowerCase()]||0;}
 function updatePB(lift,weight){
   const lkey=lift.toLowerCase();
-  if(weight>(pbData[lkey]||0)){pbData[lkey]=weight;savePBsToCloud();}
+  if(weight>(pbData[lkey]||0)){pbData[lkey]=weight;pbDirty=true;updateSaveBar();}
 }
 
 // Scores
@@ -737,7 +806,7 @@ function updateScore(key,id,val){
   data.scores[id]=Number(val);
   const el=document.getElementById('sv-'+id);
   if(el) el.textContent=val;
-  scheduleSave(key); renderScoresSummary(key);
+  markDirty(key); renderScoresSummary(key);
 }
 function renderScoresSummary(key){
   const scores=dayData(key).scores||{};
@@ -758,9 +827,9 @@ function addVeg(){
   const key=dayKey(viewDate), data=dayData(key);
   if(!data.veg) data.veg=[];
   val.split(',').map(v=>v.trim()).filter(Boolean).forEach(v=>data.veg.push({name:v,family:classifyVeg(v)}));
-  scheduleSave(key); inp.value=''; renderVeg(key);
+  markDirty(key); inp.value=''; renderVeg(key);
 }
-function removeVeg(key,idx){dayData(key).veg.splice(idx,1);scheduleSave(key);renderVeg(key);}
+function removeVeg(key,idx){dayData(key).veg.splice(idx,1);markDirty(key);renderVeg(key);}
 function renderVeg(key){
   const vegs=dayData(key).veg||[];
   document.getElementById('veg-tags').innerHTML=vegs.map((v,i)=>`<div class="veg-tag vf-${v.family}">${v.name}<button onclick="removeVeg('${key}',${i})">×</button></div>`).join('');
