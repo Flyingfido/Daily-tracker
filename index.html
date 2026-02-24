@@ -675,8 +675,8 @@ function renderLifts(key){
       <div class="lift-sets">${sets.map((s,i)=>`
         <div class="set-row">
           <div class="set-num">${i+1}</div>
-          <input class="set-input" type="number" min="1" placeholder="—" value="${s.reps||''}" onchange="updateSet('${key}','${lkey}',${i},'reps',this.value)">
-          <input class="set-input" type="number" min="0" placeholder="—" value="${s.weight||''}" onchange="updateSet('${key}','${lkey}',${i},'weight',this.value)">
+          <input class="set-input" type="number" min="1" placeholder="—" value="${s.reps||''}" oninput="updateSet('${key}','${lkey}',${i},'reps',this.value)">
+          <input class="set-input" type="number" min="0" placeholder="—" value="${s.weight||''}" oninput="updateSet('${key}','${lkey}',${i},'weight',this.value)">
           <button class="set-del" onclick="delSet('${key}','${lkey}',${i})">×</button>
         </div>`).join('')}</div>
       <button class="add-set-btn" onclick="addSet('${key}','${lkey}')">+ Add set</button>
@@ -686,10 +686,26 @@ function renderLifts(key){
 function addSet(key,lkey){const d=dayData(key);if(!d.lifts)d.lifts={};if(!d.lifts[lkey])d.lifts[lkey]=[];d.lifts[lkey].push({reps:'',weight:''});scheduleSave(key);renderLifts(key);}
 function delSet(key,lkey,idx){dayData(key).lifts[lkey].splice(idx,1);scheduleSave(key);renderLifts(key);}
 function updateSet(key,lkey,idx,field,val){
-  dayData(key).lifts[lkey][idx][field]=val;
-  const maxW=dayData(key).lifts[lkey].reduce((m,s)=>Math.max(m,parseFloat(s.weight)||0),0);
-  updatePB(lkey.charAt(0).toUpperCase()+lkey.slice(1),maxW);
-  scheduleSave(key); renderLifts(key);
+  const data=dayData(key);
+  data.lifts[lkey][idx][field]=val;
+  if(field==='weight'){
+    const maxW=data.lifts[lkey].reduce((m,s)=>Math.max(m,parseFloat(s.weight)||0),0);
+    updatePB(lkey.charAt(0).toUpperCase()+lkey.slice(1),maxW);
+  }
+  // Auto-mark strength session complete when any set has both reps and weight
+  const hasComplete=data.lifts&&Object.values(data.lifts).some(sets=>Array.isArray(sets)&&sets.some(s=>String(s.reps||'').trim()!==''&&String(s.weight||'').trim()!==''));
+  if(hasComplete&&!data.strength_done){
+    data.strength_done=true;
+    document.getElementById('strength-check-box').textContent='✓';
+    document.getElementById('strength-check').className='check-item done';
+    const ws=weekStart(viewDate);
+    let sc=0;for(let i=0;i<7;i++){if(localDb[dayKey(addDays(ws,i))]?.strength_done)sc++;}
+    const spct=Math.min(100,Math.round(sc/3*100));
+    document.getElementById('strength-sub').textContent=`${sc}/3 this week`;
+    document.getElementById('strength-progress').style.width=spct+'%';
+    document.getElementById('strength-pct').textContent=spct+'%';
+  }
+  scheduleSave(key);
 }
 function getPB(lift){return pbData[lift.toLowerCase()]||0;}
 function updatePB(lift,weight){
