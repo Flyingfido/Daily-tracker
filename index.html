@@ -592,6 +592,28 @@ function classifyVeg(name) {
 let localDb = {}; // { 'YYYY-MM-DD': {...dayData} }
 let pbData  = {}; // { deadlift: 100, ... }
 let pendingSync = null;
+let pendingSaveKey = null; // track which day key has unsaved changes
+let appInitialized = false; // guard against double initApp calls
+
+// ── LOCALSTORAGE BACKUP (prevents data loss on refresh) ─────────────────
+const LS_DB_KEY  = 'daily_localDb';
+const LS_PB_KEY  = 'daily_pbData';
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem(LS_DB_KEY, JSON.stringify(localDb));
+    localStorage.setItem(LS_PB_KEY, JSON.stringify(pbData));
+  } catch(e) { /* storage full — non-critical */ }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const db = localStorage.getItem(LS_DB_KEY);
+    const pb = localStorage.getItem(LS_PB_KEY);
+    if (db) localDb = JSON.parse(db);
+    if (pb) pbData  = JSON.parse(pb);
+  } catch(e) { /* corrupt data — start fresh */ }
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 let viewDate = new Date();
@@ -617,15 +639,27 @@ function setSyncStatus(status) {
 // ── SUPABASE DATA OPS ──────────────────────────────────────────────────────
 async function loadAllData() {
   if (!currentUser) return;
+
+  // Step 1: Restore from localStorage immediately (instant UI, no network needed)
+  loadFromLocalStorage();
+
   try {
-    // Load daily logs
+    // Step 2: Fetch from Supabase (source of truth when available)
     const { data: logs, error: logErr } = await _supabase
       .from('daily_logs')
       .select('day_key, data')
       .eq('user_id', currentUser.id);
+
     if (logErr) throw logErr;
-    localDb = {};
-    (logs||[]).forEach(row => { localDb[row.day_key] = row.data || {}; });
+
+    // Step 3: Merge — Supabase data wins, but keep any local-only keys
+    // (these are days that were saved locally but the cloud save hadn't completed)
+    const cloudDb = {};
+    (logs||[]).forEach(row => { cloudDb[row.day_key] = row.data || {}; });
+
+    // Start with local data, overlay cloud data on top
+    const merged = { ...localDb, ...cloudDb };
+    localDb = merged;
 
     // Load PBs
     const { data: pbs, error: pbErr } = await _supabase
@@ -634,8 +668,18 @@ async function loadAllData() {
       .eq('user_id', currentUser.id)
       .single();
     if (!pbErr && pbs) pbData = pbs.data || {};
+
+    // Step 4: Persist the merged result back to localStorage
+    saveToLocalStorage();
+
+    // Step 5: If there were local-only keys, push them to Supabase
+    const localOnlyKeys = Object.keys(merged).filter(k => !cloudDb[k]);
+    for (const key of localOnlyKeys) {
+      saveDayToCloud(key);
+    }
   } catch(e) {
     console.error('Load error:', e);
+    // On network failure, we still have localStorage data — app keeps working
   }
 }
 
@@ -659,6 +703,7 @@ async function saveDayToCloud(key) {
 
 async function savePBsToCloud() {
   if (!currentUser) return;
+  saveToLocalStorage(); // persist PBs locally too
   try {
     await _supabase.from('personal_bests').upsert({
       user_id: currentUser.id, data: pbData, updated_at: new Date().toISOString()
@@ -666,12 +711,34 @@ async function savePBsToCloud() {
   } catch(e) { console.error('PB save error:', e); }
 }
 
-// Debounced save — waits 1.5s after last change before writing to Supabase
+// Debounced save — writes to localStorage immediately, then syncs to Supabase after 1.5s
 function scheduleSave(key) {
+  // Immediately persist to localStorage (survives refresh)
+  saveToLocalStorage();
+  pendingSaveKey = key;
   if (pendingSync) clearTimeout(pendingSync);
   setSyncStatus('syncing');
-  pendingSync = setTimeout(() => saveDayToCloud(key), 1500);
+  pendingSync = setTimeout(() => { saveDayToCloud(key); pendingSaveKey = null; }, 1500);
 }
+
+// Flush any pending save immediately (called on page unload / tab hide)
+function flushPendingSave() {
+  if (pendingSync && pendingSaveKey) {
+    clearTimeout(pendingSync);
+    saveDayToCloud(pendingSaveKey);
+    pendingSaveKey = null;
+    pendingSync = null;
+  }
+  saveToLocalStorage();
+}
+
+// Ensure data is saved before the page unloads (refresh, close, navigate away)
+window.addEventListener('beforeunload', flushPendingSave);
+
+// Also flush when the tab goes to the background (iOS Safari fires this on app-switch)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushPendingSave();
+});
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
 async function sendMagicLink() {
@@ -715,6 +782,8 @@ async function sendMagicLink() {
 async function signOut() {
   await _supabase.auth.signOut();
   localDb={}; pbData={};
+  appInitialized = false;
+  saveToLocalStorage(); // clear localStorage too
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('auth-msg').textContent='';
@@ -722,6 +791,8 @@ async function signOut() {
 }
 
 async function initApp(user) {
+  if (appInitialized) return; // prevent double-init race
+  appInitialized = true;
   currentUser = user;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
@@ -731,26 +802,28 @@ async function initApp(user) {
   renderToday();
 }
 
-// Listen for auth state changes (including magic link redirect)
+// Listen for auth state changes (including magic link redirect & page refresh)
 _supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log('Auth event:', event, session?.user?.email); // Debug logging
-  if (event === 'SIGNED_IN' && session?.user) {
+  console.log('Auth event:', event, session?.user?.email);
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session?.user) {
     // Clean the URL hash after successful magic link auth
     if (window.location.hash) {
       window.history.replaceState(null, '', window.location.pathname);
     }
-    await initApp(session.user);
+    await initApp(session.user); // guarded against double-init
   } else if (event === 'SIGNED_OUT') {
+    appInitialized = false;
     document.getElementById('app').style.display='none';
     document.getElementById('auth-screen').style.display='flex';
   }
 });
 
-// Check if already logged in on page load
+// Fallback: check if already logged in on page load
+// (some Supabase versions don't fire INITIAL_SESSION reliably)
 (async () => {
   const { data: { session } } = await _supabase.auth.getSession();
   if (session?.user) {
-    await initApp(session.user);
+    await initApp(session.user); // guarded against double-init
   }
 })();
 
