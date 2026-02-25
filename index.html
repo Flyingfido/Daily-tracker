@@ -600,7 +600,7 @@ function classifyVeg(name) {
 let localDb = {}; // { 'YYYY-MM-DD': {...dayData} }
 let pbData  = {}; // { deadlift: 100, ... }
 let pendingSync = null;
-let pendingSaveKey = null; // track which day key has unsaved changes
+let pendingSaveKeys = new Set(); // track ALL day keys with unsaved changes
 let appInitialized = false; // guard against double initApp calls
 
 // ── LOCALSTORAGE BACKUP (prevents data loss on refresh) ─────────────────
@@ -633,6 +633,7 @@ function sameDay(a,b){ return dayKey(a)===dayKey(b); }
 function isWeekday(d){ return d.getDay()>=1&&d.getDay()<=5; }
 function dayKey(d)   { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function dayData(key){ if(!localDb[key]) localDb[key]={}; return localDb[key]; }
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS= ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -723,27 +724,37 @@ async function savePBsToCloud() {
 function scheduleSave(key) {
   // Immediately persist to localStorage (survives refresh)
   saveToLocalStorage();
-  pendingSaveKey = key;
+  pendingSaveKeys.add(key);
   if (pendingSync) clearTimeout(pendingSync);
   setSyncStatus('syncing');
-  pendingSync = setTimeout(() => { saveDayToCloud(key); pendingSaveKey = null; }, 1500);
+  pendingSync = setTimeout(() => {
+    const keys = [...pendingSaveKeys];
+    pendingSaveKeys.clear();
+    pendingSync = null;
+    keys.forEach(k => saveDayToCloud(k));
+  }, 1500);
 }
 
-// Flush any pending save immediately (called on page unload / tab hide)
+// Flush any pending saves immediately (called on page unload / tab hide)
 function flushPendingSave() {
-  if (pendingSync && pendingSaveKey) {
-    clearTimeout(pendingSync);
-    saveDayToCloud(pendingSaveKey);
-    pendingSaveKey = null;
-    pendingSync = null;
-  }
   saveToLocalStorage();
+  if (pendingSync && pendingSaveKeys.size) {
+    clearTimeout(pendingSync);
+    const keys = [...pendingSaveKeys];
+    pendingSaveKeys.clear();
+    pendingSync = null;
+    // Fire async saves — best-effort on beforeunload, reliable on visibilitychange
+    // localStorage is the primary safety net; these sync to Supabase when possible
+    keys.forEach(k => saveDayToCloud(k));
+  }
 }
 
 // Ensure data is saved before the page unloads (refresh, close, navigate away)
 window.addEventListener('beforeunload', flushPendingSave);
 
-// Also flush when the tab goes to the background (iOS Safari fires this on app-switch)
+// Flush when tab goes to background — this fires BEFORE beforeunload and the page
+// stays alive longer, so async saves are more likely to complete. Critical on iOS
+// Safari which fires visibilitychange on app-switch.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') flushPendingSave();
 });
@@ -1021,6 +1032,15 @@ function updateScore(key,id,val){
 }
 function renderScoresSummary(key){
   const scores=dayData(key).scores||{};
+  const setVals=SCORE_ITEMS.filter(i=>scores[i.id]!==undefined);
+  if(!setVals.length){
+    document.getElementById('scores-summary').innerHTML=
+      `<div class="score-chip" style="border-color:var(--border)">
+        <div class="score-chip-label">Day average</div>
+        <div class="score-chip-val" style="color:var(--text-dim)">—</div>
+      </div>`;
+    return;
+  }
   const vals=SCORE_ITEMS.map(i=>scores[i.id]!==undefined?scores[i.id]:5);
   const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
   const col=avg<4?'#B83050':avg<7?'#C4651A':'#2D6A2D';
@@ -1043,7 +1063,7 @@ function addVeg(){
 function removeVeg(key,idx){dayData(key).veg.splice(idx,1);scheduleSave(key);renderVeg(key);}
 function renderVeg(key){
   const vegs=dayData(key).veg||[];
-  document.getElementById('veg-tags').innerHTML=vegs.map((v,i)=>`<div class="veg-tag vf-${v.family}">${v.name}<button onclick="removeVeg('${key}',${i})">×</button></div>`).join('');
+  document.getElementById('veg-tags').innerHTML=vegs.map((v,i)=>`<div class="veg-tag vf-${escHtml(v.family)}">${escHtml(v.name)}<button onclick="removeVeg('${key}',${i})">×</button></div>`).join('');
   document.getElementById('veg-count-label').textContent=`${vegs.length} portion${vegs.length!==1?'s':''}`;
 }
 
