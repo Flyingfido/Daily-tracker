@@ -85,6 +85,7 @@ nav {
   font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 20px;
   border: 1px solid var(--accent); background: transparent; color: var(--accent);
   cursor: pointer; font-family: 'Instrument Sans', sans-serif; transition: all 0.15s;
+  margin-left: 0.5rem; flex-shrink: 0;
 }
 .reload-btn:hover { background: var(--accent-light); }
 
@@ -344,10 +345,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
       <button class="nav-tab" onclick="showView('summary',this)">Summary</button>
       <button class="nav-tab" onclick="showView('trends',this)">Trends</button>
     </div>
+    <button class="reload-btn" onclick="reloadFromCloud()">Reload</button>
     <div class="nav-user">
       <div class="sync-dot" id="sync-dot" title="Sync status"></div>
       <span id="nav-email"></span>
-      <button class="reload-btn" onclick="reloadFromCloud()">Reload</button>
       <button class="signout-btn" onclick="signOut()">Sign out</button>
     </div>
   </nav>
