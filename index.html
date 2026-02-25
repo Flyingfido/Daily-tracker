@@ -238,9 +238,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
   .week-strip { gap: 0.2rem; }
   .week-day { padding: 0.5rem 0.15rem; }
   .week-day .wd-date { font-size: 0.88rem; }
-  nav { padding: 0 0.75rem; }
+  nav { padding: 0 0.75rem; flex-wrap: wrap; height: auto; min-height: 58px; gap: 0.3rem; padding-top: 0.4rem; padding-bottom: 0.4rem; }
   .nav-tab { padding: 0.38rem 0.65rem; font-size: 0.73rem; }
   .nav-user { display: none; }
+  .reload-btn { margin-left: auto; }
   .view { padding: 1rem 0.75rem; }
 }
 
@@ -666,8 +667,15 @@ async function loadAllData() {
     const cloudDb = {};
     (logs||[]).forEach(row => { cloudDb[row.day_key] = row.data || {}; });
 
-    // Start with local data, overlay cloud data on top
-    const merged = { ...localDb, ...cloudDb };
+    // Start with local data, overlay cloud data on top (only if cloud entry has content)
+    const merged = { ...localDb };
+    for (const [k, v] of Object.entries(cloudDb)) {
+      if (v && Object.keys(v).length > 0) {
+        merged[k] = v;
+      } else if (!merged[k]) {
+        merged[k] = v;
+      }
+    }
     localDb = merged;
 
     // Load PBs
@@ -762,35 +770,51 @@ document.addEventListener('visibilitychange', () => {
 // ── RELOAD FROM CLOUD ────────────────────────────────────────────────────
 async function reloadFromCloud() {
   if (!currentUser) return;
+
+  // First, flush any pending saves so Supabase has the latest data
+  flushPendingSave();
+  // Give in-flight saves a moment to reach the server
+  await new Promise(r => setTimeout(r, 500));
+
   setSyncStatus('syncing');
   try {
-    // Clear localStorage to eliminate any stale/empty cached data
-    localStorage.removeItem(LS_DB_KEY);
-    localStorage.removeItem(LS_PB_KEY);
-    localDb = {};
-    pbData = {};
-
-    // Pull fresh from Supabase only
+    // Pull fresh from Supabase — do NOT clear local data until fetch succeeds
     const { data: logs, error: logErr } = await _supabase
       .from('daily_logs')
       .select('day_key, data')
       .eq('user_id', currentUser.id);
     if (logErr) throw logErr;
-    (logs||[]).forEach(row => { localDb[row.day_key] = row.data || {}; });
 
     const { data: pbs, error: pbErr } = await _supabase
       .from('personal_bests')
       .select('data')
       .eq('user_id', currentUser.id)
       .single();
+
+    // Fetch succeeded — now safe to replace local state
+    const cloudDb = {};
+    (logs||[]).forEach(row => { cloudDb[row.day_key] = row.data || {}; });
+
+    // Merge: keep any local-only keys that haven't reached the cloud yet
+    const localOnlyKeys = Object.keys(localDb).filter(k => !cloudDb[k] && localDb[k] && Object.keys(localDb[k]).length > 0);
+    localDb = { ...cloudDb };
+    localOnlyKeys.forEach(k => { localDb[k] = localDb[k] || localDb[k]; });
+    // Re-add truly local-only data (not yet in cloud)
+    const prevLocal = JSON.parse(localStorage.getItem(LS_DB_KEY) || '{}');
+    localOnlyKeys.forEach(k => { if (!cloudDb[k] && prevLocal[k]) localDb[k] = prevLocal[k]; });
+
     if (!pbErr && pbs) pbData = pbs.data || {};
 
-    // Persist the fresh cloud data to localStorage
+    // Persist the merged result to localStorage
     saveToLocalStorage();
     setSyncStatus('saved');
 
+    // Push any local-only keys to Supabase
+    for (const k of localOnlyKeys) {
+      saveDayToCloud(k);
+    }
+
     // Re-render current view
-    viewDate = today();
     renderToday();
   } catch(e) {
     console.error('Reload error:', e);
@@ -855,8 +879,14 @@ async function initApp(user) {
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('nav-email').textContent = user.email;
-  await loadAllData();
   viewDate = today();
+
+  // Render immediately from localStorage (instant UI)
+  loadFromLocalStorage();
+  renderToday();
+
+  // Then load from Supabase and re-render with merged data
+  await loadAllData();
   renderToday();
 }
 
