@@ -81,6 +81,12 @@ nav {
   cursor: pointer; font-family: 'Instrument Sans', sans-serif; transition: all 0.15s;
 }
 .signout-btn:hover { border-color: var(--danger); color: var(--danger); }
+.reload-btn {
+  font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 20px;
+  border: 1px solid var(--accent); background: transparent; color: var(--accent);
+  cursor: pointer; font-family: 'Instrument Sans', sans-serif; transition: all 0.15s;
+}
+.reload-btn:hover { background: var(--accent-light); }
 
 /* ── SYNC INDICATOR ── */
 .sync-dot {
@@ -341,6 +347,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     <div class="nav-user">
       <div class="sync-dot" id="sync-dot" title="Sync status"></div>
       <span id="nav-email"></span>
+      <button class="reload-btn" onclick="reloadFromCloud()">Reload</button>
       <button class="signout-btn" onclick="signOut()">Sign out</button>
     </div>
   </nav>
@@ -739,6 +746,45 @@ window.addEventListener('beforeunload', flushPendingSave);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') flushPendingSave();
 });
+
+// ── RELOAD FROM CLOUD ────────────────────────────────────────────────────
+async function reloadFromCloud() {
+  if (!currentUser) return;
+  setSyncStatus('syncing');
+  try {
+    // Clear localStorage to eliminate any stale/empty cached data
+    localStorage.removeItem(LS_DB_KEY);
+    localStorage.removeItem(LS_PB_KEY);
+    localDb = {};
+    pbData = {};
+
+    // Pull fresh from Supabase only
+    const { data: logs, error: logErr } = await _supabase
+      .from('daily_logs')
+      .select('day_key, data')
+      .eq('user_id', currentUser.id);
+    if (logErr) throw logErr;
+    (logs||[]).forEach(row => { localDb[row.day_key] = row.data || {}; });
+
+    const { data: pbs, error: pbErr } = await _supabase
+      .from('personal_bests')
+      .select('data')
+      .eq('user_id', currentUser.id)
+      .single();
+    if (!pbErr && pbs) pbData = pbs.data || {};
+
+    // Persist the fresh cloud data to localStorage
+    saveToLocalStorage();
+    setSyncStatus('saved');
+
+    // Re-render current view
+    viewDate = today();
+    renderToday();
+  } catch(e) {
+    console.error('Reload error:', e);
+    setSyncStatus('error');
+  }
+}
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
 async function sendMagicLink() {
