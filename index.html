@@ -634,6 +634,8 @@ function sameDay(a,b){ return dayKey(a)===dayKey(b); }
 function isWeekday(d){ return d.getDay()>=1&&d.getDay()<=5; }
 function dayKey(d)   { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function dayData(key){ if(!localDb[key]) localDb[key]={}; return localDb[key]; }
+// Read-only accessor for rendering — does NOT pollute localDb with empty entries
+function dayDataRead(key){ return localDb[key] || {}; }
 function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS= ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -678,7 +680,7 @@ async function loadAllData() {
       return;
     }
 
-    // Step 2: Fetch from Supabase (source of truth when available)
+    // Step 2: Fetch from Supabase
     const { data: logs, error: logErr } = await _supabase
       .from('daily_logs')
       .select('day_key, data, updated_at')
@@ -686,26 +688,41 @@ async function loadAllData() {
 
     if (logErr) throw logErr;
 
-    // Step 3: Smart merge — prefer whichever source has MORE real data per day
+    // Step 3: Timestamp-based merge — local wins if it was modified more recently
     const cloudDb = {};
     const cloudTs = {};
     (logs||[]).forEach(row => {
       cloudDb[row.day_key] = row.data || {};
-      cloudTs[row.day_key] = row.updated_at || '';
+      cloudTs[row.day_key] = row.updated_at ? new Date(row.updated_at).getTime() : 0;
     });
 
-    const merged = { ...localSnapshot };
-    for (const [k, v] of Object.entries(cloudDb)) {
-      const cloudWeight = dayDataWeight(v);
-      const localWeight = dayDataWeight(merged[k]);
-      if (cloudWeight > 0 && cloudWeight >= localWeight) {
-        // Cloud has equal or more data — use it
-        merged[k] = v;
-      } else if (cloudWeight > 0 && localWeight > cloudWeight) {
-        // Local has MORE data than cloud (interrupted save) — keep local
-        // but DON'T overwrite cloud yet, let scheduleSave handle it
-      } else if (!merged[k]) {
-        merged[k] = v;
+    const merged = {};
+    // Gather all keys from both sources
+    const allKeys = new Set([...Object.keys(localSnapshot), ...Object.keys(cloudDb)]);
+
+    for (const k of allKeys) {
+      const local = localSnapshot[k];
+      const cloud = cloudDb[k];
+      const localTs = (local && local._lastModified) || 0;
+      const cTs = cloudTs[k] || 0;
+
+      if (local && !cloud) {
+        // Local only — keep it
+        merged[k] = local;
+      } else if (cloud && !local) {
+        // Cloud only — use it
+        merged[k] = cloud;
+      } else if (local && cloud) {
+        // Both exist — prefer whichever was modified more recently
+        if (localTs > cTs) {
+          // Local is newer (user made changes that haven't synced yet)
+          merged[k] = local;
+        } else {
+          // Cloud is newer or same age — use cloud data
+          // but preserve the _lastModified if local had one
+          merged[k] = cloud;
+          if (localTs) merged[k]._lastModified = localTs;
+        }
       }
     }
     localDb = merged;
@@ -721,15 +738,12 @@ async function loadAllData() {
     // Step 4: Persist the merged result back to localStorage
     saveToLocalStorage();
 
-    // Step 5: If there were local-only keys WITH real data, push them to Supabase
-    const localOnlyKeys = Object.keys(merged).filter(k => !cloudDb[k] && dayDataWeight(merged[k]) > 0);
-    for (const key of localOnlyKeys) {
-      saveDayToCloud(key);
-    }
-
-    // Step 6: Push local keys that have MORE data than cloud back to Supabase
-    for (const [k, v] of Object.entries(cloudDb)) {
-      if (dayDataWeight(localSnapshot[k]) > dayDataWeight(v)) {
+    // Step 5: Push local-only keys or locally-newer keys to Supabase
+    for (const k of allKeys) {
+      const local = localSnapshot[k];
+      const localTs = (local && local._lastModified) || 0;
+      const cTs = cloudTs[k] || 0;
+      if (localTs > cTs && local) {
         saveDayToCloud(k);
       }
     }
@@ -741,17 +755,21 @@ async function loadAllData() {
   }
 }
 
-async function saveDayToCloud(key) {
+async function saveDayToCloud(key, isUserSave) {
   if (!currentUser) return;
-  // Guard: never overwrite cloud data with empty/skeleton entries
   const data = localDb[key];
-  if (!data || dayDataWeight(data) === 0) return;
+  if (!data) return;
+  // Only skip if this is an automatic sync push (not user-initiated) AND the entry
+  // was never modified by the user (no _lastModified stamp = skeleton from rendering)
+  if (!isUserSave && !data._lastModified && dayDataWeight(data) === 0) return;
   setSyncStatus('syncing');
   try {
+    // Strip internal metadata before sending to Supabase
+    const { _lastModified, ...cleanData } = data;
     const { error } = await _supabase.from('daily_logs').upsert({
       user_id:    currentUser.id,
       day_key:    key,
-      data:       data,
+      data:       cleanData,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,day_key' });
     if (error) throw error;
@@ -774,6 +792,8 @@ async function savePBsToCloud() {
 
 // Debounced save — writes to localStorage immediately, then syncs to Supabase after 1.5s
 function scheduleSave(key) {
+  // Stamp modification time so merge logic knows this is newer than cloud
+  if (localDb[key]) localDb[key]._lastModified = Date.now();
   // Immediately persist to localStorage (survives refresh)
   saveToLocalStorage();
   pendingSaveKeys.add(key);
@@ -783,7 +803,7 @@ function scheduleSave(key) {
     const keys = [...pendingSaveKeys];
     pendingSaveKeys.clear();
     pendingSync = null;
-    keys.forEach(k => saveDayToCloud(k));
+    keys.forEach(k => saveDayToCloud(k, true));
   }, 1500);
 }
 
@@ -797,7 +817,7 @@ function flushPendingSave() {
     pendingSync = null;
     // Fire async saves — best-effort on beforeunload, reliable on visibilitychange
     // localStorage is the primary safety net; these sync to Supabase when possible
-    keys.forEach(k => saveDayToCloud(k));
+    keys.forEach(k => saveDayToCloud(k, true));
   }
 }
 
@@ -829,13 +849,11 @@ async function reloadFromCloud() {
   }
 
   setSyncStatus('syncing');
-  // Snapshot current state before overwriting
   const prevLocalDb = JSON.parse(JSON.stringify(localDb));
   try {
-    // Pull fresh from Supabase — do NOT clear local data until fetch succeeds
     const { data: logs, error: logErr } = await _supabase
       .from('daily_logs')
-      .select('day_key, data')
+      .select('day_key, data, updated_at')
       .eq('user_id', currentUser.id);
     if (logErr) throw logErr;
 
@@ -845,40 +863,49 @@ async function reloadFromCloud() {
       .eq('user_id', currentUser.id)
       .single();
 
-    // Fetch succeeded — now safe to replace local state
     const cloudDb = {};
-    (logs||[]).forEach(row => { cloudDb[row.day_key] = row.data || {}; });
+    const cloudTs = {};
+    (logs||[]).forEach(row => {
+      cloudDb[row.day_key] = row.data || {};
+      cloudTs[row.day_key] = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+    });
 
-    // Merge: keep any local-only keys with real data that haven't reached the cloud yet
-    const localOnlyKeys = Object.keys(prevLocalDb).filter(k => !cloudDb[k] && dayDataWeight(prevLocalDb[k]) > 0);
+    // Timestamp-based merge: local wins only if it was modified more recently
+    localDb = {};
+    const allKeys = new Set([...Object.keys(prevLocalDb), ...Object.keys(cloudDb)]);
+    for (const k of allKeys) {
+      const local = prevLocalDb[k];
+      const cloud = cloudDb[k];
+      const localTs = (local && local._lastModified) || 0;
+      const cTs = cloudTs[k] || 0;
 
-    // Start with cloud data, then restore local-only entries
-    localDb = { ...cloudDb };
-    localOnlyKeys.forEach(k => { localDb[k] = prevLocalDb[k]; });
-
-    // Also keep local entries that have MORE data than cloud (interrupted saves)
-    for (const [k, v] of Object.entries(cloudDb)) {
-      if (dayDataWeight(prevLocalDb[k]) > dayDataWeight(v)) {
-        localDb[k] = prevLocalDb[k];
+      if (local && !cloud) {
+        localDb[k] = local;
+      } else if (cloud && !local) {
+        localDb[k] = cloud;
+      } else if (localTs > cTs) {
+        localDb[k] = local;
+      } else {
+        localDb[k] = cloud;
       }
     }
 
     if (!pbErr && pbs) pbData = pbs.data || {};
 
-    // Persist the merged result to localStorage
     saveToLocalStorage();
     setSyncStatus('saved');
 
-    // Push any local-only keys to Supabase
-    for (const k of localOnlyKeys) {
-      saveDayToCloud(k);
+    // Push locally-newer keys to Supabase
+    for (const k of allKeys) {
+      const localTs = (prevLocalDb[k] && prevLocalDb[k]._lastModified) || 0;
+      if (localTs > (cloudTs[k] || 0) && prevLocalDb[k]) {
+        saveDayToCloud(k);
+      }
     }
 
-    // Re-render current view
     renderToday();
   } catch(e) {
     console.error('Reload error:', e);
-    // Restore previous state on failure
     localDb = prevLocalDb;
     saveToLocalStorage();
     setSyncStatus('error');
@@ -1005,7 +1032,7 @@ function offsetDay(n) { viewDate=addDays(viewDate,n); renderToday(); }
 function goToday()    { viewDate=today(); renderToday(); }
 
 function renderToday() {
-  const d=viewDate, key=dayKey(d), data=dayData(key);
+  const d=viewDate, key=dayKey(d), data=dayDataRead(key);
   const isToday=sameDay(d,today()), weekday=isWeekday(d);
   document.getElementById('today-title').innerHTML = `${DAYS[d.getDay()]}, ${d.getDate()} <span>${MONTHS[d.getMonth()]}</span>`;
   document.getElementById('today-sub').textContent  = isToday ? 'Today' : `${Math.abs(Math.round((d-today())/864e5))} days ${d<today()?'ago':'ahead'}`;
@@ -1049,10 +1076,10 @@ function renderWeekStrip() {
 }
 
 function renderCheckList(cid, items, key, section) {
-  const data=dayData(key);
-  if(!data[section]) data[section]={};
+  const data=dayDataRead(key);
+  const sec=data[section]||{};
   document.getElementById(cid).innerHTML=items.map(item=>{
-    const done=!!data[section][item.id];
+    const done=!!sec[item.id];
     return `<div class="check-item${done?' done':''}" onclick="toggleCheck('${key}','${section}','${item.id}')">
       <div class="check-box">${done?'✓':''}</div>
       <div class="check-label">${item.label}</div>
@@ -1074,12 +1101,11 @@ function toggleStrength(){
 
 // Lifts
 function renderLifts(key){
-  const data=dayData(key);
-  if(!data.lifts) data.lifts={};
+  const data=dayDataRead(key);
+  const lifts=data.lifts||{};
   document.getElementById('lifts-container').innerHTML=LIFTS.map(lift=>{
     const lkey=lift.toLowerCase();
-    if(!data.lifts[lkey]) data.lifts[lkey]=[];
-    const sets=data.lifts[lkey], pb=getPB(lift);
+    const sets=lifts[lkey]||[], pb=getPB(lift);
     const maxT=sets.reduce((m,s)=>Math.max(m,parseFloat(s.weight)||0),0);
     const isNewPB=maxT>0&&pb>0&&maxT>=pb;
     return `<div class="lift-section">
@@ -1115,10 +1141,10 @@ function updatePB(lift,weight){
 
 // Scores
 function renderScores(key){
-  const data=dayData(key);
-  if(!data.scores) data.scores={};
+  const data=dayDataRead(key);
+  const scores=data.scores||{};
   document.getElementById('scores-list').innerHTML=SCORE_ITEMS.map(item=>{
-    const val=data.scores[item.id]!==undefined?data.scores[item.id]:5;
+    const val=scores[item.id]!==undefined?scores[item.id]:5;
     return `<div class="slider-item">
       <div class="slider-top"><div class="slider-label">${item.label}</div><div class="slider-val" id="sv-${item.id}">${val}</div></div>
       <input type="range" min="1" max="10" value="${val}" oninput="updateScore('${key}','${item.id}',this.value)">
@@ -1135,7 +1161,7 @@ function updateScore(key,id,val){
   scheduleSave(key); renderScoresSummary(key);
 }
 function renderScoresSummary(key){
-  const scores=dayData(key).scores||{};
+  const scores=dayDataRead(key).scores||{};
   const setVals=SCORE_ITEMS.filter(i=>scores[i.id]!==undefined);
   if(!setVals.length){
     document.getElementById('scores-summary').innerHTML=
@@ -1166,7 +1192,7 @@ function addVeg(){
 }
 function removeVeg(key,idx){dayData(key).veg.splice(idx,1);scheduleSave(key);renderVeg(key);}
 function renderVeg(key){
-  const vegs=dayData(key).veg||[];
+  const vegs=dayDataRead(key).veg||[];
   document.getElementById('veg-tags').innerHTML=vegs.map((v,i)=>`<div class="veg-tag vf-${escHtml(v.family)}">${escHtml(v.name)}<button onclick="removeVeg('${key}',${i})">×</button></div>`).join('');
   document.getElementById('veg-count-label').textContent=`${vegs.length} portion${vegs.length!==1?'s':''}`;
 }
