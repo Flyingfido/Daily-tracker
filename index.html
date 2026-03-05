@@ -647,31 +647,63 @@ function setSyncStatus(status) {
 }
 
 // ── SUPABASE DATA OPS ──────────────────────────────────────────────────────
+
+// Count meaningful (user-entered) data fields in a day entry
+function dayDataWeight(obj) {
+  if (!obj || typeof obj !== 'object') return 0;
+  let w = 0;
+  if (obj.strength_done) w++;
+  for (const sec of ['core','fitness','wellness','gratitude']) {
+    if (obj[sec]) { for (const v of Object.values(obj[sec])) { if (v) w++; } }
+  }
+  if (obj.scores) { for (const v of Object.values(obj.scores)) { if (v !== undefined) w++; } }
+  if (obj.lifts) { for (const sets of Object.values(obj.lifts)) { if (Array.isArray(sets) && sets.length) w += sets.length; } }
+  if (Array.isArray(obj.veg) && obj.veg.length) w += obj.veg.length;
+  return w;
+}
+
 async function loadAllData() {
   if (!currentUser) return;
 
   // Step 1: Restore from localStorage immediately (instant UI, no network needed)
   loadFromLocalStorage();
+  // Snapshot local data BEFORE merge so we can protect it
+  const localSnapshot = JSON.parse(JSON.stringify(localDb));
 
   try {
+    // Step 1b: Ensure we have a valid session before querying
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) {
+      console.warn('No valid session — using cached data only');
+      return;
+    }
+
     // Step 2: Fetch from Supabase (source of truth when available)
     const { data: logs, error: logErr } = await _supabase
       .from('daily_logs')
-      .select('day_key, data')
+      .select('day_key, data, updated_at')
       .eq('user_id', currentUser.id);
 
     if (logErr) throw logErr;
 
-    // Step 3: Merge — Supabase data wins, but keep any local-only keys
-    // (these are days that were saved locally but the cloud save hadn't completed)
+    // Step 3: Smart merge — prefer whichever source has MORE real data per day
     const cloudDb = {};
-    (logs||[]).forEach(row => { cloudDb[row.day_key] = row.data || {}; });
+    const cloudTs = {};
+    (logs||[]).forEach(row => {
+      cloudDb[row.day_key] = row.data || {};
+      cloudTs[row.day_key] = row.updated_at || '';
+    });
 
-    // Start with local data, overlay cloud data on top (only if cloud entry has content)
-    const merged = { ...localDb };
+    const merged = { ...localSnapshot };
     for (const [k, v] of Object.entries(cloudDb)) {
-      if (v && Object.keys(v).length > 0) {
+      const cloudWeight = dayDataWeight(v);
+      const localWeight = dayDataWeight(merged[k]);
+      if (cloudWeight > 0 && cloudWeight >= localWeight) {
+        // Cloud has equal or more data — use it
         merged[k] = v;
+      } else if (cloudWeight > 0 && localWeight > cloudWeight) {
+        // Local has MORE data than cloud (interrupted save) — keep local
+        // but DON'T overwrite cloud yet, let scheduleSave handle it
       } else if (!merged[k]) {
         merged[k] = v;
       }
@@ -689,25 +721,37 @@ async function loadAllData() {
     // Step 4: Persist the merged result back to localStorage
     saveToLocalStorage();
 
-    // Step 5: If there were local-only keys, push them to Supabase
-    const localOnlyKeys = Object.keys(merged).filter(k => !cloudDb[k]);
+    // Step 5: If there were local-only keys WITH real data, push them to Supabase
+    const localOnlyKeys = Object.keys(merged).filter(k => !cloudDb[k] && dayDataWeight(merged[k]) > 0);
     for (const key of localOnlyKeys) {
       saveDayToCloud(key);
     }
+
+    // Step 6: Push local keys that have MORE data than cloud back to Supabase
+    for (const [k, v] of Object.entries(cloudDb)) {
+      if (dayDataWeight(localSnapshot[k]) > dayDataWeight(v)) {
+        saveDayToCloud(k);
+      }
+    }
   } catch(e) {
     console.error('Load error:', e);
-    // On network failure, we still have localStorage data — app keeps working
+    // On network failure, restore local snapshot to be safe
+    localDb = localSnapshot;
+    saveToLocalStorage();
   }
 }
 
 async function saveDayToCloud(key) {
   if (!currentUser) return;
+  // Guard: never overwrite cloud data with empty/skeleton entries
+  const data = localDb[key];
+  if (!data || dayDataWeight(data) === 0) return;
   setSyncStatus('syncing');
   try {
     const { error } = await _supabase.from('daily_logs').upsert({
       user_id:    currentUser.id,
       day_key:    key,
-      data:       localDb[key] || {},
+      data:       data,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,day_key' });
     if (error) throw error;
@@ -776,7 +820,17 @@ async function reloadFromCloud() {
   // Give in-flight saves a moment to reach the server
   await new Promise(r => setTimeout(r, 500));
 
+  // Ensure valid session before reloading
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) {
+    console.warn('No valid session — cannot reload from cloud');
+    setSyncStatus('error');
+    return;
+  }
+
   setSyncStatus('syncing');
+  // Snapshot current state before overwriting
+  const prevLocalDb = JSON.parse(JSON.stringify(localDb));
   try {
     // Pull fresh from Supabase — do NOT clear local data until fetch succeeds
     const { data: logs, error: logErr } = await _supabase
@@ -795,13 +849,19 @@ async function reloadFromCloud() {
     const cloudDb = {};
     (logs||[]).forEach(row => { cloudDb[row.day_key] = row.data || {}; });
 
-    // Merge: keep any local-only keys that haven't reached the cloud yet
-    const localOnlyKeys = Object.keys(localDb).filter(k => !cloudDb[k] && localDb[k] && Object.keys(localDb[k]).length > 0);
+    // Merge: keep any local-only keys with real data that haven't reached the cloud yet
+    const localOnlyKeys = Object.keys(prevLocalDb).filter(k => !cloudDb[k] && dayDataWeight(prevLocalDb[k]) > 0);
+
+    // Start with cloud data, then restore local-only entries
     localDb = { ...cloudDb };
-    localOnlyKeys.forEach(k => { localDb[k] = localDb[k] || localDb[k]; });
-    // Re-add truly local-only data (not yet in cloud)
-    const prevLocal = JSON.parse(localStorage.getItem(LS_DB_KEY) || '{}');
-    localOnlyKeys.forEach(k => { if (!cloudDb[k] && prevLocal[k]) localDb[k] = prevLocal[k]; });
+    localOnlyKeys.forEach(k => { localDb[k] = prevLocalDb[k]; });
+
+    // Also keep local entries that have MORE data than cloud (interrupted saves)
+    for (const [k, v] of Object.entries(cloudDb)) {
+      if (dayDataWeight(prevLocalDb[k]) > dayDataWeight(v)) {
+        localDb[k] = prevLocalDb[k];
+      }
+    }
 
     if (!pbErr && pbs) pbData = pbs.data || {};
 
@@ -818,6 +878,9 @@ async function reloadFromCloud() {
     renderToday();
   } catch(e) {
     console.error('Reload error:', e);
+    // Restore previous state on failure
+    localDb = prevLocalDb;
+    saveToLocalStorage();
     setSyncStatus('error');
   }
 }
@@ -888,6 +951,17 @@ async function initApp(user) {
   // Then load from Supabase and re-render with merged data
   await loadAllData();
   renderToday();
+
+  // If still no data after load, try a session refresh and retry once
+  const hasAnyData = Object.keys(localDb).some(k => dayDataWeight(localDb[k]) > 0);
+  if (!hasAnyData) {
+    console.warn('No data found — attempting session refresh and retry');
+    const { data: refreshed } = await _supabase.auth.refreshSession();
+    if (refreshed?.session) {
+      await loadAllData();
+      renderToday();
+    }
+  }
 }
 
 // Listen for auth state changes (including magic link redirect & page refresh)
